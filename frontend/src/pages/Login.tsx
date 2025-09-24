@@ -12,11 +12,9 @@ import {
   LogIn,
   ArrowRight,
   Shield,
-  Sparkles,
   ArrowLeft,
 } from "lucide-react";
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
 
 const roleConfig = {
   customer: { title: "Customer Portal Sign In", icon: Store },
@@ -85,13 +83,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100 dark:from-slate-900 dark:via-slate-950 relative overflow-hidden flex items-center justify-center p-4 pt-32">
-      <Link
-        to="/"
-        aria-label="Go back to home"
-        className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-xl group dark:border-slate-700 dark:bg-slate-800/70"
-      >
-        <ArrowLeft className="h-6 w-6 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
-      </Link>
       <div dir="ltr">
         <Header />
       </div>
@@ -104,6 +95,13 @@ const Login = () => {
         `}
       >
         <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
+          <Link
+            to="/"
+            aria-label="Go back to home"
+            className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-xl group dark:border-slate-700 dark:bg-slate-800/70"
+          >
+            <ArrowLeft className="h-6 w-6 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
+          </Link>
           <div className="flex flex-col items-center text-center relative z-10">
             <div className="relative mb-6">
               <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg transform transition-all duration-500 hover:scale-110 hover:rotate-12">
