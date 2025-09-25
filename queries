@@ -1,0 +1,467 @@
+-- Create the Database
+CREATE DATABASE HwaliDB;
+GO
+
+
+USE HwaliDB;
+GO
+
+
+-- 1. Roles Table
+CREATE TABLE roles (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    name VARCHAR(20) NOT NULL UNIQUE
+);
+GO
+
+
+INSERT INTO roles (name) VALUES ('admin'), ('manager'), ('worker'), ('driver'), ('store');
+GO
+
+
+-- 2. Stores Table
+CREATE TABLE stores (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    name VARCHAR(200) NOT NULL,
+    contact_name VARCHAR(150),
+    contact_phone VARCHAR(50),
+    address TEXT,
+    city VARCHAR(100),
+    notes TEXT,
+    created_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+
+-- 3. Users Table
+CREATE TABLE users (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(30),
+    email VARCHAR(255) UNIQUE,
+    role_id INT REFERENCES roles(id),
+    store_id UNIQUEIDENTIFIER REFERENCES stores(id) NULL,
+    password_hash TEXT,
+    created_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+
+-- 4. Customers Table
+CREATE TABLE customers (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    name VARCHAR(200),
+    phone VARCHAR(50),
+    notes TEXT
+);
+GO
+
+
+-- 5. Pickup Requests Table
+CREATE TABLE pickup_requests (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    store_id UNIQUEIDENTIFIER REFERENCES stores(id),
+    requested_by_user_id UNIQUEIDENTIFIER REFERENCES users(id),
+    requested_at DATETIME DEFAULT GETDATE(),
+    pickup_date DATE NULL,
+    status VARCHAR(30) DEFAULT 'requested',
+    notes TEXT
+);
+GO
+
+
+-- 6. Hwali Items Table (Formerly hasira_items)
+CREATE TABLE hwali_items (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    pickup_request_id UNIQUEIDENTIFIER REFERENCES pickup_requests(id),
+    customer_id UNIQUEIDENTIFIER REFERENCES customers(id) NULL,
+    qty INT DEFAULT 1,
+    description TEXT,
+    due_date DATE NULL,
+    current_status VARCHAR(30) DEFAULT 'requested',
+    assigned_worker_id UNIQUEIDENTIFIER REFERENCES users(id) NULL,
+    assigned_driver_id UNIQUEIDENTIFIER REFERENCES users(id) NULL,
+    created_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+
+-- 7. Status History Table
+CREATE TABLE status_history (
+    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    item_id UNIQUEIDENTIFIER REFERENCES hwali_items(id), -- Updated reference
+    from_status VARCHAR(30),
+    to_status VARCHAR(30),
+    changed_by_user_id UNIQUEIDENTIFIER REFERENCES users(id),
+    changed_at DATETIME DEFAULT GETDATE(),
+    note TEXT
+);
+GO
+
+
+SELECT * FROM USERS
+SELECT * FROM Hwali_items
+-- 1 #############################################################
+
+
+--use this in backend terminal: node src/scripts/hashPassword.js
+--It will prompt you to enter a password. Type a secure password (e.g., AdminPassword123!) – and press Enter. It will output a long hash string. Copy this hash.
+
+
+-- Insert the Admin User
+
+
+-- 1. Get the RoleID for 'admin'
+DECLARE @AdminRoleID INT;
+SELECT @AdminRoleID = id FROM roles WHERE name = 'admin';
+
+
+-- 2. Insert the new admin user
+INSERT INTO users (name, email, role_id, password_hash)
+VALUES (
+  'Admin User',
+  'admin@hwali.com',
+  @AdminRoleID,
+  '$2b$10$2XxBaFiz//MXwNkFuBVtR.onQqTkf6GS7doQ0o5v7fLRURFqTuXay' -- <-- PASTE THE HASH HERE
+);
+
+
+GO
+-- 2 ##############################
+
+
+
+
+-- also add this to add status column
+USE HwaliDB;
+GO
+
+
+ALTER TABLE users
+ADD status VARCHAR(20) NOT NULL DEFAULT 'pending';
+GO
+
+
+-- Let's make our existing admin user active
+UPDATE users
+SET status = 'active'
+WHERE email = 'admin@hwali.com';
+GO
+
+
+-- 3 ##############################
+
+
+
+
+-- Create the new statuses table
+CREATE TABLE statuses (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description NVARCHAR(255),
+    color VARCHAR(50),
+    display_order INT NOT NULL,
+    created_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+
+-- Insert the initial workflow statuses
+INSERT INTO statuses (name, description, color, display_order) VALUES
+('requested', 'A new pickup has been requested by a store.', 'yellow', 1),
+('pickup', 'A driver is on the way to pick up the items.', 'blue', 2),
+('working', 'Items are currently being worked on in the warehouse.', 'purple', 3),
+('wrapping', 'Items are being wrapped and prepared for delivery.', 'violet', 4),
+('ready', 'Items are ready for delivery.', 'green', 5),
+('delivery', 'A driver is on the way to deliver the items.', 'orange', 6),
+('completed', 'Items have been successfully delivered.', 'success-green', 7);
+GO
+
+
+
+
+-- 4 ##############################
+
+
+-- You also need to modify the hwali_items table to use this new statuses table.
+-- This script will drop the old constraint and add a new foreign key.
+
+
+-- First, drop the old check constraint if it exists
+
+
+-- IGNORE
+IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME = 'CK__hwali_ite__curre__...') -- Replace with your actual constraint name
+BEGIN
+    ALTER TABLE hwali_items DROP CONSTRAINT [CK__hwali_ite__curre__...]; -- Replace with your actual constraint name
+END
+GO
+
+
+
+
+
+
+
+
+-- Add a new status_id column to the hwali_items table
+ALTER TABLE hwali_items
+ADD status_id INT;
+GO
+
+
+-- 5 ##############################
+
+
+
+
+-- Update the new status_id column based on the old current_status string values
+UPDATE hi
+SET hi.status_id = s.id
+FROM hwali_items AS hi
+JOIN statuses AS s ON hi.current_status = s.name;
+GO
+
+
+-- 6 ##############################
+
+
+-- Add the foreign key constraint
+ALTER TABLE hwali_items
+ADD CONSTRAINT FK_hwali_items_status
+FOREIGN KEY (status_id) REFERENCES statuses(id);
+GO
+
+
+-- 7 ##############################
+--------
+-- Now that the data is migrated, you can optionally drop the old current_status column
+-- Be sure you have updated your application code to use status_id before dropping this column.
+DECLARE @ConstraintName NVARCHAR(200)
+SELECT @ConstraintName = NAME FROM SYS.DEFAULT_CONSTRAINTS
+WHERE PARENT_OBJECT_ID = OBJECT_ID('hwali_items')
+AND PARENT_COLUMN_ID = (SELECT column_id FROM sys.columns WHERE NAME = N'current_status' AND object_id = OBJECT_ID(N'hwali_items'))
+
+
+-- 2. Drop the default constraint dynamically
+IF @ConstraintName IS NOT NULL
+BEGIN
+    EXEC('ALTER TABLE hwali_items DROP CONSTRAINT ' + @ConstraintName)
+END
+GO
+
+
+-- 3. Now, you can safely drop the old column
+ALTER TABLE hwali_items DROP COLUMN current_status;
+GO
+
+
+
+
+-------
+--To add the pricing table: 
+
+
+USE HwaliDB;
+GO
+
+
+
+
+-- Create the system_settings table to store key-value pairs
+CREATE TABLE system_settings (
+    setting_key VARCHAR(255) PRIMARY KEY NOT NULL,
+    setting_value NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+
+
+
+-- Insert initial default values for the new pricing settings
+INSERT INTO system_settings (setting_key, setting_value) VALUES
+('pickup_price', '50.00'),
+('delivery_price', '50.00');
+GO
+
+
+-- 8 ##############################
+-- Create a trigger to automatically update the 'updated_at' timestamp whenever a setting is changed
+CREATE TRIGGER trg_system_settings_update
+ON system_settings
+AFTER UPDATE
+AS
+BEGIN
+    UPDATE system_settings
+    SET updated_at = GETDATE()
+    FROM inserted
+    WHERE system_settings.setting_key = inserted.setting_key;
+END;
+GO
+-- 9 ##############################
+
+
+
+
+--To remove the customer table:
+
+
+USE HwaliDB;
+GO
+
+
+-- Step 1: Find the name of the foreign key constraint on hwali_items.customer_id
+-- The name is often auto-generated, so we need to look it up first.
+DECLARE @ConstraintName NVARCHAR(200);
+SELECT @ConstraintName = OBJECT_NAME(f.constraint_object_id)
+FROM sys.foreign_key_columns AS f
+INNER JOIN sys.tables AS t ON f.parent_object_id = t.object_id
+INNER JOIN sys.columns AS c ON f.parent_column_id = c.column_id AND f.parent_object_id = c.object_id
+WHERE t.name = 'hwali_items' AND c.name = 'customer_id';
+
+
+-- Step 2: Drop the foreign key constraint dynamically if it exists
+IF @ConstraintName IS NOT NULL
+BEGIN
+    EXEC('ALTER TABLE hwali_items DROP CONSTRAINT ' + @ConstraintName);
+END
+GO
+
+
+-- 10 ##############################
+
+
+-- Step 3: Drop the old customer_id column from the hwali_items table
+IF COL_LENGTH('hwali_items', 'customer_id') IS NOT NULL
+BEGIN
+    ALTER TABLE hwali_items DROP COLUMN customer_id;
+END
+GO
+
+
+-- Step 4: Add a new user_id column to link items to a user (our unified client model)
+-- This will be used to associate an item with the customer who owns it.
+IF COL_LENGTH('hwali_items', 'user_id') IS NULL
+BEGIN
+    ALTER TABLE hwali_items
+    ADD user_id UNIQUEIDENTIFIER REFERENCES users(id) NULL;
+END
+GO
+
+
+-- Step 5: Now that there are no more references to the customers table, you can safely drop it.
+IF OBJECT_ID('customers', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE customers;
+END
+GO
+
+
+-- 11 ##############################
+
+
+
+
+--Table for branding:
+
+
+
+
+
+
+USE HwaliDB;
+GO
+
+
+
+
+-- Add new settings for branding to the system_settings table
+-- We use an IF NOT EXISTS clause to prevent errors if the script is run multiple times.
+
+
+
+
+IF NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'company_name')
+BEGIN
+    INSERT INTO system_settings (setting_key, setting_value) VALUES ('company_name', 'Hwali Management');
+END
+GO
+
+
+
+
+IF NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'company_logo_url')
+BEGIN
+    INSERT INTO system_settings (setting_key, setting_value) VALUES ('company_logo_url', '/placeholder.svg'); -- A default placeholder logo
+END
+GO
+
+
+-- 12 ##############################
+select * from users
+alter table users
+ADD notes varchar(max)
+
+Table for branding:
+
+
+USE HwaliDB;
+GO
+
+
+-- Add new settings for branding to the system_settings table
+-- We use an IF NOT EXISTS clause to prevent errors if the script is run multiple times.
+
+
+IF NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'company_name')
+BEGIN
+    INSERT INTO system_settings (setting_key, setting_value) VALUES ('company_name', 'Hwali Management');
+END
+GO
+
+
+IF NOT EXISTS (SELECT 1 FROM system_settings WHERE setting_key = 'company_logo_url')
+BEGIN
+    INSERT INTO system_settings (setting_key, setting_value) VALUES ('company_logo_url', '/placeholder.svg'); -- A default placeholder logo
+END
+GO
+
+
+—- change store to customer
+UPDATE dbo.roles SET name = 'customer' WHERE name = 'store'
+GO
+
+
+If we want to delete the tables:
+
+USE HwaliDB;
+GO
+
+
+-- Delete the 'company_name' setting
+DELETE FROM system_settings
+WHERE setting_key = 'company_name';
+GO
+
+
+-- Delete the 'company_logo_url' setting
+DELETE FROM system_settings
+WHERE setting_key = 'company_logo_url';
+GO
+
+
+-- You can optionally verify that they have been removed
+SELECT *
+FROM system_settings;
+GO
+
+
+—- add the first time login
+USE HwaliDB;
+GO
+
+ALTER TABLE Users
+ADD is_first_login BIT NOT NULL DEFAULT 1;
+GO
