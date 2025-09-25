@@ -1,5 +1,3 @@
-import { Store } from "../types/hwaliManager";
-
 const API_BASE_URL = "http://localhost:5000/api";
 
 const fetchApi = async (url: string, options: RequestInit = {}) => {
@@ -50,6 +48,13 @@ export const api = {
     return fetchApi("/auth/register-store", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  },
+
+  changePassword: async (newPassword: string, confirmPassword: string) => {
+    return fetchApi("/users/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ newPassword, confirmPassword }),
     });
   },
 
