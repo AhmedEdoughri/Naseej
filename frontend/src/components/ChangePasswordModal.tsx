@@ -106,7 +106,7 @@ export const ChangePasswordModal = ({
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="w-full px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-semibold rounded-xl shadow-lg hover:from-amber-500 hover:to-yellow-600 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2 group"
+            className="w-full px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-semibold rounded-xl shadow-lg hover:from-amber-500 hover:to-yellow-600 transform transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-x-2 group"
           >
             {isLoading ? (
               <>
@@ -116,7 +116,7 @@ export const ChangePasswordModal = ({
             ) : (
               <>
                 <span>{t("savePassword")}</span>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300 " />
               </>
             )}
           </button>

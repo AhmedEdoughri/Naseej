@@ -164,5 +164,11 @@
       "denyRegistration": "This will delete the user and their store. Are you sure?",
       "deleteStore": "Are you sure?"
     }
-  }
+  },
+
+  "setNewPassword": "Set a New Password",
+  "updateYourPasswordPrompt": "Update your password Prompt",
+  "newPassword": "New Password",
+  "confirmPassword": "Confirm Password",
+  "savePassword": "Save Password"
 }

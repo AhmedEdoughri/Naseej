@@ -164,5 +164,10 @@
       "denyRegistration": "سيؤدي هذا إلى حذف المستخدم ومتجره. هل أنت متأكد؟",
       "deleteStore": "هل أنت متأكد؟"
     }
-  }
+  },
+  "setNewPassword": "حدد كلمة مرور جديدة",
+  "updateYourPasswordPrompt": "تذكير بتحديث كلمة المرور",
+  "newPassword": "كلمة المرور الجديدة",
+  "confirmPassword": "تأكيد كلمة المرور",
+  "savePassword": "حفظ كلمة المرور"
 }
