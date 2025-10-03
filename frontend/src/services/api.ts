@@ -38,10 +38,10 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
 
 export const api = {
   // --- Auth ---
-  login: async (email: string, password: string, role: string | null) => {
+  login: async (identifier: string, password: string, role: string | null) => {
     return fetchApi("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({ identifier, password, role }), // Changed email to identifier
     });
   },
   registerStore: async (data: any) => {
@@ -66,6 +66,13 @@ export const api = {
     return fetchApi("/stores", {
       method: "POST",
       body: JSON.stringify(storeData),
+    });
+  },
+  createCustomer: async (customerData: any) => {
+    return fetchApi("/users/customer", {
+      // This points to the correct new route
+      method: "POST",
+      body: JSON.stringify(customerData),
     });
   },
   updateStore: async (storeId: string, storeData: any) => {

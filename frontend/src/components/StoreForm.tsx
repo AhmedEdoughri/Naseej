@@ -4,130 +4,148 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-// The 'Store' type should be in your types/hwaliManager.ts file
-interface Store {
+// This interface now handles all fields for creating/editing a customer
+interface CustomerStoreFormData {
   id?: string;
   name: string;
-  contact_name: string;
-  contact_phone: string;
+  phone: string;
+  email?: string;
+  password?: string;
+  storeName: string;
   address: string;
   city: string;
   notes: string;
 }
 
 interface StoreFormProps {
-  store?: Store | null;
-  onSubmit: (store: Store) => void;
+  store?: Partial<CustomerStoreFormData> | null; // Use the same type for consistency
+  onSubmit: (data: Partial<CustomerStoreFormData>) => void;
   onClose: () => void;
 }
 
 export const StoreForm = ({ store, onSubmit, onClose }: StoreFormProps) => {
-  const [formData, setFormData] = useState<Store>({
+  const [formData, setFormData] = useState<CustomerStoreFormData>({
     name: "",
-    contact_name: "",
-    contact_phone: "",
+    phone: "",
+    email: "",
+    password: "",
+    storeName: "",
     address: "",
     city: "",
     notes: "",
   });
 
-  // State to hold validation errors
-  const [errors, setErrors] = useState<Partial<Store>>({});
-
+  // --- THIS IS THE CORRECTED USEEFFECT ---
   useEffect(() => {
+    // If a 'store' object is passed, we are editing. Populate the form.
     if (store) {
-      setFormData(store);
+      setFormData({
+        id: store.id || "",
+        name: store.name || "",
+        phone: store.phone || "",
+        email: store.email || "", // Email will be pre-filled but disabled
+        password: "", // Password should always be empty for security
+        storeName: store.storeName || "",
+        address: store.address || "",
+        city: store.city || "",
+        notes: store.notes || "",
+      });
+    } else {
+      // If 'store' is null, we are creating. Ensure the form is completely blank.
+      setFormData({
+        name: "",
+        phone: "",
+        email: "",
+        password: "",
+        storeName: "",
+        address: "",
+        city: "",
+        notes: "",
+      });
     }
-  }, [store]);
+  }, [store]); // This effect re-runs whenever the 'store' prop changes
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear the error for the field being edited
-    if (errors[e.target.name as keyof Store]) {
-      setErrors({ ...errors, [e.target.name]: undefined });
-    }
-  };
-
-  // --- NEW: Validation Logic ---
-  const validate = (): boolean => {
-    const newErrors: Partial<Store> = {};
-
-    // Rule 1: Store Name is required
-    if (!formData.name.trim()) {
-      newErrors.name = "Store name is required.";
-    }
-
-    // Rule 2: Contact Name is required
-    if (!formData.contact_name.trim()) {
-      newErrors.contact_name = "Contact name is required.";
-    }
-
-    // Rule 3: Contact Phone is required
-    if (!formData.contact_phone.trim()) {
-      newErrors.contact_phone = "Contact phone is required.";
-    } else {
-      // Rule 4: Phone must be in a valid format (numbers and some special chars)
-      const phoneRegex =
-        /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im;
-      if (!phoneRegex.test(formData.contact_phone)) {
-        newErrors.contact_phone = "Please enter a valid phone number.";
-      }
-    }
-
-    setErrors(newErrors);
-    // The form is valid if the newErrors object is empty
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Only submit if the form is valid
-    if (validate()) {
-      onSubmit(formData);
-    }
+    onSubmit(formData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Store Name</Label>
-        <Input
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name}</p>
-        )}
+      <h3 className="text-lg font-medium text-amber-700 dark:text-amber-400">
+        User Information
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Contact Name</Label>
+          <Input
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Contact Phone</Label>
+          <Input
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="contact_name">Contact Name</Label>
+          <Label htmlFor="email">Email Address</Label>
           <Input
-            id="contact_name"
-            name="contact_name"
-            value={formData.contact_name}
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
             onChange={handleChange}
+            required
+            disabled={!!store}
           />
-          {errors.contact_name && (
-            <p className="text-sm text-destructive">{errors.contact_name}</p>
-          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="contact_phone">Contact Phone</Label>
-          <Input
-            id="contact_phone"
-            name="contact_phone"
-            value={formData.contact_phone}
-            onChange={handleChange}
-          />
-          {errors.contact_phone && (
-            <p className="text-sm text-destructive">{errors.contact_phone}</p>
-          )}
-        </div>
+        {/* Only show the password field when creating a new user (when 'store' is null) */}
+        {!store && (
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        )}
+      </div>
+
+      <hr className="my-6 border-amber-200 dark:border-gray-700" />
+      <h3 className="text-lg font-medium text-amber-700 dark:text-amber-400">
+        Store Information
+      </h3>
+
+      <div className="space-y-2">
+        <Label htmlFor="storeName">Store Name</Label>
+        <Input
+          id="storeName"
+          name="storeName"
+          value={formData.storeName}
+          onChange={handleChange}
+          required
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="address">Address</Label>
@@ -156,15 +174,16 @@ export const StoreForm = ({ store, onSubmit, onClose }: StoreFormProps) => {
           onChange={handleChange}
         />
       </div>
+
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="secondary" onClick={onClose}>
           Cancel
         </Button>
         <Button
           type="submit"
-          className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600 shadow-lg transform transition-all duration-300 hover:scale-105"
+          className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white..."
         >
-          {store ? "Save Changes" : "Create Store"}
+          {store ? "Save Changes" : "Create Customer"}
         </Button>
       </div>
     </form>
