@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { api } from "@/services/api";
-import { Mail, Send } from "lucide-react";
+import { Mail, Send, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const Contact = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 300);
@@ -67,8 +69,15 @@ const Contact = () => {
           ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
         `}
       >
-        <Card className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg shadow-2xl border-amber-200 dark:border-gray-800">
-          <CardHeader className="text-center">
+        <Card className="relative bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg shadow-2xl border-amber-200 dark:border-gray-800">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-lg group dark:border-slate-700 dark:bg-slate-800/70"
+          >
+            <ArrowLeft className="h-5 w-5 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
+          </button>
+          <CardHeader className="text-center pt-12">
             <Mail className="mx-auto h-12 w-12 text-amber-500" />
             <CardTitle className="text-3xl font-bold mt-4">
               Contact Us
