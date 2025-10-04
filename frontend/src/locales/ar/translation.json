@@ -33,6 +33,7 @@
   },
 
   "_comment2": "Login and resgister pages",
+  "emailOrUserId": "البريد الإلكتروني أو رقم المستخدم",
   "loginSubtitle": "أدخل بياناتك للوصول إلى لوحة التحكم الخاصة بك.",
   "loginWelcome": "مرحباً بعودتك",
   "loginSecure": "سجّل الدخول بأمان إلى حسابك.",
@@ -60,6 +61,13 @@
   "invalid_credentials_or_inactive": "بيانات الاعتماد غير صالحة أو الحساب غير نشط",
   "invalid_credentials": "بيانات الاعتماد غير صالحة",
   "access_denied": "الوصول مرفوض",
+  "registerSuccessTitle": "تم تقديم التسجيل",
+  "yourUserIdIs": "رقم المستخدم الخاص بك هو:",
+  "userIdLoginNote": "يمكنك استخدام هذا الرقم لتسجيل الدخول بمجرد الموافقة على حسابك.",
+  "backToHome": "العودة إلى الرئيسية",
+  "registerSuccessToastTitle": "تم التسجيل بنجاح!",
+  "registerSuccessToastDescription": "رقم المستخدم الجديد الخاص بك هو {{userId}}. سيتم إعلامك عند الموافقة على حسابك.",
+  "registerFailToastTitle": "فشل التسجيل",
 
   "_comment3": "Admin Panel",
   "adminPanel": {
@@ -91,6 +99,7 @@
     },
     "tableHeaders": {
       "name": "الاسم",
+      "userId": "رقم المستخدم",
       "email": "البريد الإلكتروني",
       "phone": "الهاتف",
       "role": "الدور",

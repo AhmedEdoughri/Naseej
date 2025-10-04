@@ -27,7 +27,8 @@ const roleConfig = {
 
 const Login = () => {
   const { t, i18n } = useTranslation();
-  const [email, setEmail] = useState("");
+  // --- CHANGE 1: Use 'identifier' instead of 'email' ---
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -58,8 +59,16 @@ const Login = () => {
     const expectedRole = searchParams.get("role");
 
     try {
-      const response = await api.login(email, password, expectedRole);
+      // --- CHANGE 2: Pass the 'identifier' to the API ---
+      const response = await api.login(identifier, password, expectedRole);
       const { token, role, userId, is_first_login } = response;
+
+      console.log(
+        "Value received from API:",
+        is_first_login,
+        "| Type:",
+        typeof is_first_login
+      );
 
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
@@ -80,7 +89,6 @@ const Login = () => {
       if (err.message) {
         setError(t(err.message));
       } else {
-        // Fallback for generic errors
         setError(t("login_failed_generic"));
       }
     } finally {
@@ -98,10 +106,12 @@ const Login = () => {
 
         <div
           className={`
-          w-full max-w-md relative z-10
-          transform transition-all duration-1000 ease-out
-          ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
-        `}
+           w-full max-w-md relative z-10
+           transform transition-all duration-1000 ease-out
+           ${
+             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+           }
+          `}
         >
           <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
             <Link
@@ -130,23 +140,24 @@ const Login = () => {
             <form onSubmit={handleLogin} className="space-y-6 relative z-10">
               <div className="space-y-4">
                 <div>
+                  {/* --- CHANGE 3: Update the label and input field --- */}
                   <label
-                    htmlFor="email"
+                    htmlFor="identifier"
                     className="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >
-                    {t("emailAddress")}
+                    {t("emailOrUserId")}
                   </label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="identifier"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     required
                     disabled={isLoading}
                     placeholder={
                       i18n.language === "ar"
-                        ? "البريد الإلكتروني"
-                        : "name@example.com"
+                        ? "البريد الإلكتروني أو رقم المستخدم"
+                        : "Email or User ID"
                     }
                   />
                 </div>

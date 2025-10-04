@@ -42,7 +42,7 @@ export const UserForm = ({ user, roles, onSubmit, onClose }: UserFormProps) => {
     email: "",
     phone: "",
     role_id: "",
-    status: "",
+    status: "active",
     password: "",
     notes: "",
   });

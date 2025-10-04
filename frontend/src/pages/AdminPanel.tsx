@@ -74,16 +74,30 @@ interface User {
   roleName: string;
   role_id: number;
   status: string;
+  user_id: number;
 }
 interface Role {
   id: number;
   name: string;
 }
 interface Store {
-  id: string;
-  name: string;
+  store_id: string;
+  storeName: string;
+  address: string;
+  city: string;
+  storeNotes: string;
+  userId: string;
   contact_name: string;
   contact_phone: string;
+  contact_email: string;
+  status: string;
+  user_id: number;
+}
+interface StoreFormData {
+  id: string;
+  name: string;
+  phone: string;
+  storeName: string;
   address: string;
   city: string;
   notes: string;
@@ -320,7 +334,7 @@ const AdminPanel = () => {
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
-  const [editingStore, setEditingStore] = useState<Store | null>(null);
+  const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState<Status | null>(null);
 
@@ -346,7 +360,7 @@ const AdminPanel = () => {
           api.getStatuses(),
         ]);
       setUsers(fetchedUsers);
-      setRoles(fetchedRoles.filter((r: Role) => r.name !== "customer"));
+      setRoles(fetchedRoles);
       setStores(fetchedStores);
       setStatuses(fetchedStatuses);
       setOriginalStatuses(fetchedStatuses);
@@ -579,15 +593,21 @@ const AdminPanel = () => {
     }
   };
 
-  const handleStoreSubmit = async (storeData: Store) => {
+  const handleStoreSubmit = async (storeData: StoreFormData) => {
     try {
+      // If editingStore exists, we are UPDATING an existing customer.
       if (editingStore) {
+        // Use the 'id' from the editingStore state for the update call
         await api.updateStore(editingStore.id, storeData);
         toast.success(t("adminPanel.toasts.storeUpdatedSuccess"));
       } else {
-        await api.createStore(storeData);
-        toast.success(t("adminPanel.toasts.storeCreatedSuccess"));
+        // --- THIS IS THE FIX ---
+        // Change api.createStore to api.createCustomer
+        await api.createCustomer(storeData);
+        toast.success("Customer and Store created successfully!");
       }
+
+      // Close the dialog and refresh data in both cases
       setIsStoreDialogOpen(false);
       setEditingStore(null);
       fetchData();
@@ -644,6 +664,9 @@ const AdminPanel = () => {
           >
             {t("adminPanel.tableHeaders.name")}
           </SortableHeader>
+          <TableHead className="whitespace-nowrap text-center">
+            {t("adminPanel.tableHeaders.userId", "User ID")}
+          </TableHead>
           <SortableHeader
             sortKey="email"
             className="whitespace-nowrap text-center"
@@ -689,6 +712,8 @@ const AdminPanel = () => {
               )}
               {user.name}
             </TableCell>
+
+            <TableCell className="text-center">{user.user_id}</TableCell>
             <TableCell className="text-center">{user.email}</TableCell>
             <TableCell className="text-center">{user.phone || "-"}</TableCell>
             <TableCell className="text-center">
@@ -1050,102 +1075,111 @@ const AdminPanel = () => {
           </TabsContent>
 
           <TabsContent value="stores">
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-amber-200 dark:border-gray-800 rounded-2xl p-6 mt-6 shadow-xl">
+            <div className="bg-white/80 dark:bg-gray-900/80 ...">
               <div className="flex justify-between items-center mb-6 flex-wrap">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500">
                     <Building className="h-6 w-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                    Partner Stores
-                  </h2>
+                  <h2 className="text-2xl font-bold ...">Partner Stores</h2>
                 </div>
+                {/* This button now opens the UserForm to create a new customer */}
                 <AnimatedActionButton
                   size="default"
                   onClick={() => {
                     setEditingStore(null);
                     setIsStoreDialogOpen(true);
                   }}
-                  className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600 shadow-lg"
+                  className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white ..."
                 >
                   <PlusCircle className="h-4 w-4 mr-2" /> Add a New Store
                 </AnimatedActionButton>
               </div>
-              <div className="overflow-hidden rounded-xl border border-amber-200 dark:border-gray-800">
+              <div className="overflow-hidden rounded-xl border ...">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800/50 dark:to-gray-800/20 dark:border-gray-800">
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50 ...">
+                      <TableHead className="text-center ...">
                         Store Name
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      <TableHead className="text-center ...">
                         Contact Name
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Phone
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Address
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        City
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Notes
-                      </TableHead>
-                      <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Actions
-                      </TableHead>
+                      <TableHead className="text-center ...">User ID</TableHead>
+                      <TableHead className="text-center ...">Phone</TableHead>
+                      <TableHead className="text-center ...">Address</TableHead>
+                      <TableHead className="text-center ...">City</TableHead>
+                      <TableHead className="text-center ...">Status</TableHead>
+                      <TableHead className="text-center ...">Notes</TableHead>
+                      <TableHead className="text-center ...">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {stores.map((store, index) => (
-                      <AnimatedTableRow key={store.id} delay={index * 100}>
-                        <TableCell className="font-medium">
-                          {store.name}
+                    {stores.map((customer, index) => (
+                      <AnimatedTableRow
+                        key={customer.store_id}
+                        delay={index * 100}
+                      >
+                        <TableCell className="text-center font-medium">
+                          {customer.storeName}
                         </TableCell>
-                        <TableCell>{store.contact_name}</TableCell>
-                        <TableCell>{store.contact_phone}</TableCell>
-                        <TableCell>{store.address}</TableCell>
-                        <TableCell>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium dark:bg-blue-900/50 dark:text-blue-300">
-                            {store.city}
+                        <TableCell className="text-center">
+                          {customer.contact_name}
+                        </TableCell>
+                        <TableCell className="text-center text-sm text-gray-500 dark:text-gray-400">
+                          {customer.user_id}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {customer.contact_phone}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {customer.address}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-center ...">
+                            {customer.city}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <p
-                                className="max-w-[150px] truncate cursor-pointer text-sm text-gray-600 underline hover:text-amber-700 transition-colors duration-300 dark:text-gray-400 dark:hover:text-amber-400"
-                                title={store.notes || ""}
-                              >
-                                {store.notes || "-"}
-                              </p>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Notes for {store.name}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="max-h-[400px] overflow-y-auto whitespace-pre-wrap break-words pt-4">
-                                {store.notes || "No notes provided."}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                        <TableCell className="text-center">
+                          <span
+                            className={`capitalize ... ${
+                              customer.status === "pending"
+                                ? "bg-yellow-100 ..."
+                                : customer.status === "locked"
+                                ? "bg-red-100 ..."
+                                : "bg-green-100 ..."
+                            }`}
+                          >
+                            {t(
+                              `adminPanel.statuses.${customer.status?.toLowerCase()}`,
+                              { defaultValue: customer.status }
+                            )}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right space-x-2">
+                        <TableCell className="text-center">
+                          {customer.storeNotes}
+                        </TableCell>
+                        <TableCell className="text-center space-x-2">
                           <AnimatedActionButton
                             onClick={() => {
-                              setEditingStore(store);
+                              const formCompatibleStore: StoreFormData = {
+                                id: customer.store_id,
+                                name: customer.contact_name,
+                                phone: customer.contact_phone,
+                                storeName: customer.storeName,
+                                address: customer.address,
+                                city: customer.city,
+                                notes: customer.storeNotes,
+                              };
+                              setEditingStore(formCompatibleStore);
                               setIsStoreDialogOpen(true);
                             }}
                           >
                             <Pencil className="h-4 w-4" />
                           </AnimatedActionButton>
                           <AnimatedActionButton
-                            onClick={() => handleDeleteStore(store.id)}
-                            className="hover:bg-red-100 hover:border-red-300 dark:hover:bg-red-900/50 dark:hover:border-red-700"
+                            onClick={() => handleDeleteStore(customer.store_id)}
+                            className="hover:bg-red-100 ..."
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </AnimatedActionButton>
@@ -1289,7 +1323,7 @@ const AdminPanel = () => {
             </DialogHeader>
             <UserForm
               user={editingUser}
-              roles={roles}
+              roles={roles.filter((role) => role.name !== "customer")}
               onSubmit={handleUserSubmit}
               onClose={() => setIsUserDialogOpen(false)}
             />
@@ -1297,11 +1331,10 @@ const AdminPanel = () => {
         </Dialog>
 
         <Dialog open={isStoreDialogOpen} onOpenChange={setIsStoreDialogOpen}>
-          <DialogContent className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-amber-200 dark:border-gray-800">
+          <DialogContent /* ... */>
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                <Building className="h-5 w-5 mr-2 text-amber-600 dark:text-amber-400" />
-                {editingStore ? "Edit Store Details" : "Create a New Store"}
+              <DialogTitle /* ... */>
+                <Building /* ... */ /> Edit Store Details
               </DialogTitle>
             </DialogHeader>
             <StoreForm

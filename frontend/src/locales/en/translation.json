@@ -33,6 +33,7 @@
   },
 
   "_comment2": "Login and resgister pages",
+  "emailOrUserId": "Email or User ID",
   "loginSubtitle": "Enter your credentials to access your dashboard.",
   "loginWelcome": "Welcome Back",
   "loginSecure": "Securely log in to your account.",
@@ -60,6 +61,13 @@
   "invalid_credentials": "Invalid credentials",
   "invalid_credentials_or_inactive": "Invalid credentials or account not active.",
   "access_denied": "Access denied",
+  "registerSuccessTitle": "Registration Submitted",
+  "yourUserIdIs": "Your User ID is:",
+  "userIdLoginNote": "You can use this ID to log in once your account is approved.",
+  "backToHome": "Back to Home",
+  "registerSuccessToastTitle": "Registration Successful!",
+  "registerSuccessToastDescription": "Your new User ID is {{userId}}. You'll be notified when your account is approved.",
+  "registerFailToastTitle": "Registration Failed",
 
   "_comment3": "Admin Panel",
   "adminPanel": {
@@ -91,6 +99,7 @@
     },
     "tableHeaders": {
       "name": "Name",
+      "userId": "User ID",
       "email": "Email",
       "phone": "Phone",
       "role": "Role",

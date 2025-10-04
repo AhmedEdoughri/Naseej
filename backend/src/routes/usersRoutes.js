@@ -3,22 +3,35 @@ const router = express.Router();
 const usersController = require("../controllers/usersController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// All routes in this file are protected and for admins only
-router.use(protect, authorize("admin"));
-
+// This route allows admins and managers to get the list of users,
+// but only admins can create non-customer users (e.g., workers, managers).
 router
   .route("/")
-  .get(usersController.getUsers)
-  .post(usersController.createUser);
+  .get(protect, authorize("admin", "manager"), usersController.getUsers)
+  .post(protect, authorize("admin"), usersController.createUser);
 
+// --- THIS IS THE NEW ROUTE ---
+// This route is specifically for an admin to create a new customer and their store.
+router
+  .route("/customer")
+  .post(protect, authorize("admin"), usersController.createCustomer);
+
+// Route for any logged-in user to change their own password
+router.route("/change-password").put(protect, usersController.changePassword);
+
+// These routes for managing individual users remain admin-only.
 router
   .route("/:id")
-  .delete(usersController.deleteUser)
-  .put(usersController.updateUser);
+  .delete(protect, authorize("admin"), usersController.deleteUser)
+  .put(protect, authorize("admin"), usersController.updateUser);
 
-router.route("/:id/approve").patch(usersController.approveUser);
-router.route("/:id/deny").delete(usersController.denyRegistration);
+router
+  .route("/:id/approve")
+  .patch(protect, authorize("admin"), usersController.approveUser);
+router
+  .route("/:id/deny")
+  .delete(protect, authorize("admin"), usersController.denyRegistration);
 
-router.get("/roles", usersController.getRoles);
+router.get("/roles", protect, authorize("admin"), usersController.getRoles);
 
 module.exports = router;

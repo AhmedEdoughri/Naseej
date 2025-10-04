@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/services/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { KeyRound, ArrowRight } from "lucide-react"; // Import new icons
+import { KeyRound, ArrowRight } from "lucide-react";
 
 interface ChangePasswordModalProps {
   open: boolean;
@@ -26,19 +26,36 @@ export const ChangePasswordModal = ({
 }: ChangePasswordModalProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ NEW: validation error states
+  const [errors, setErrors] = useState<{
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
   const handleSubmit = async () => {
-    if (newPassword !== confirmPassword) {
-      toast.error(t("passwordsDoNotMatch"));
-      return;
-    }
+    let newErrors: typeof errors = {};
+
     if (newPassword.length < 8) {
-      toast.error(t("password_too_short"));
+      newErrors.newPassword = t("password_too_short");
+    }
+
+    if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = t("passwordsDoNotMatch");
+    }
+
+    // ✅ If there are validation errors, show them inline and stop
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    // Clear previous errors
+    setErrors({});
 
     setIsLoading(true);
     try {
@@ -70,7 +87,9 @@ export const ChangePasswordModal = ({
             {t("updateYourPasswordPrompt")}
           </p>
         </DialogHeader>
+
         <div className="space-y-4 px-6 py-4">
+          {/* NEW PASSWORD */}
           <div className="space-y-2">
             <Label
               htmlFor="newPassword"
@@ -82,10 +101,20 @@ export const ChangePasswordModal = ({
               id="newPassword"
               type="password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, newPassword: undefined }));
+              }}
               placeholder="••••••••"
+              className={errors.newPassword ? "border-red-500" : ""}
             />
+            {/* ✅ Inline error message */}
+            {errors.newPassword && (
+              <p className="text-sm text-red-500">{errors.newPassword}</p>
+            )}
           </div>
+
+          {/* CONFIRM PASSWORD */}
           <div className="space-y-2">
             <Label
               htmlFor="confirmPassword"
@@ -97,11 +126,19 @@ export const ChangePasswordModal = ({
               id="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+              }}
               placeholder="••••••••"
+              className={errors.confirmPassword ? "border-red-500" : ""}
             />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+            )}
           </div>
         </div>
+
         <DialogFooter className="px-6 pb-6">
           <button
             onClick={handleSubmit}
@@ -116,7 +153,7 @@ export const ChangePasswordModal = ({
             ) : (
               <>
                 <span>{t("savePassword")}</span>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300 " />
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
               </>
             )}
           </button>

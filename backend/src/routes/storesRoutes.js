@@ -3,10 +3,7 @@ const router = express.Router();
 const storesController = require("../controllers/storesController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router
-  .route("/")
-  .get(protect, storesController.getStores) // Admins and managers can see stores
-  .post(protect, authorize("admin"), storesController.createStore); // Only admins can create
+router.route("/").get(protect, storesController.getStores); // Admins and managers can see stores
 
 router
   .route("/:id")

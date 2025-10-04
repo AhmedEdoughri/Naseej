@@ -16,6 +16,7 @@ import {
   User,
   Building,
   ArrowLeft,
+  Home,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 
@@ -36,7 +37,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [newUserId, setNewUserId] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,14 +61,18 @@ const Register = () => {
     setIsSubmitting(true);
     try {
       const response = await api.registerStore(formData);
-      toast.success("Registration Successful!", {
-        description: response.message,
+      toast.success(t("registerSuccessToastTitle"), {
+        description: t("registerSuccessToastDescription", {
+          userId: response.userId,
+        }),
+        duration: 8000,
       });
       setIsSuccess(true);
       setMessage(response.message);
+      setNewUserId(response.userId);
     } catch (err: any) {
       setError(err.message || "Registration failed.");
-      toast.error("Registration Failed", {
+      toast.error(t("registerFailToastTitle"), {
         description: err.message,
       });
     } finally {
@@ -91,8 +96,21 @@ const Register = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Registration Submitted
+              {t("registerSuccessTitle")}
             </h1>
+            {newUserId && (
+              <div className="py-4 px-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-xl">
+                <p className="text-lg text-amber-800 dark:text-amber-200">
+                  {t("yourUserIdIs")}{" "}
+                  <strong className="font-bold text-2xl tracking-wider">
+                    {newUserId}
+                  </strong>
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                  {t("userIdLoginNote")}
+                </p>
+              </div>
+            )}
             {message && (
               <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50 rounded-xl">
                 <p className="text-green-700 dark:text-green-300 font-medium">
@@ -100,16 +118,12 @@ const Register = () => {
                 </p>
               </div>
             )}
-            <p className="text-gray-700 dark:text-slate-300 leading-relaxed">
-              You will be notified by text message once an administrator has
-              approved your account.
-            </p>
             <Button
               onClick={() => navigate("/")}
               className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-white font-semibold py-4 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 group"
             >
-              <span>Back to Home</span>
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+              <Home className="h-5 w-5" />
+              <span>{t("backToHome")}</span>
             </Button>
           </div>
         </div>
@@ -122,16 +136,16 @@ const Register = () => {
       <Header />
       <div
         className={`
-          w-full max-w-lg relative z-10
-          transform transition-all duration-1000 ease-out
-          ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
+         w-full max-w-lg relative z-10
+         transform transition-all duration-1000 ease-out
+         ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
         `}
       >
         <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-slate-800 space-y-6 relative overflow-hidden">
           <Link
             to="/login?role=customer"
             aria-label="Go back to login"
-            className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-xl group dark:border-slate-700 dark:bg-slate-800/70"
+            className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl group dark:border-slate-700 dark:bg-slate-800/70"
           >
             <ArrowLeft className="h-6 w-6 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
           </Link>
@@ -154,6 +168,7 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            {/* --- Form inputs... (no changes here) --- */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
                 <User className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -244,6 +259,7 @@ const Register = () => {
                 disabled={isSubmitting}
               />
             </div>
+            {/* --- End of form inputs --- */}
 
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-xl">
@@ -273,16 +289,17 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="text-center pt-4 border-t border-amber-200 dark:border-slate-700 relative z-10">
+          {/* --- THIS IS THE MODIFIED PART --- */}
+          <div className="text-sm text-center pt-4 border-t border-amber-200 dark:border-slate-700 relative z-10 text-gray-600 dark:text-slate-400">
+            {t("alreadyHaveAccount")}{" "}
             <Link
               to="/login?role=customer"
-              className="text-sm text-gray-600 hover:text-amber-700 hover:underline transition-colors duration-300 flex items-center justify-center space-x-2 group dark:text-slate-400 dark:hover:text-amber-400"
+              className="font-semibold text-amber-600 hover:underline"
             >
-              <span>
-                {t("alreadyHaveAccount")} {t("loginHere")}
-              </span>
+              {t("loginHere")}
             </Link>
           </div>
+          {/* --- END OF MODIFIED PART --- */}
         </div>
       </div>
     </div>

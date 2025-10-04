@@ -8,7 +8,7 @@ exports.getUsers = async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request().query(`
-      SELECT u.id, u.name, u.email, u.status, u.role_id, r.name as roleName, u.phone, u.notes, u.store_id
+      SELECT u.id, u.name, u.email, u.status, u.role_id, r.name as roleName, u.phone, u.notes, u.user_id
       FROM users u
       JOIN roles r ON u.role_id = r.id
     `);
@@ -48,36 +48,22 @@ exports.denyRegistration = async (req, res) => {
   try {
     await transaction.begin();
 
-    // First, get the user and their associated store_id
-    const userResult = await new sql.Request(transaction)
-      .input("id", sql.UniqueIdentifier, req.params.id)
-      .query(
-        "SELECT store_id FROM users WHERE id = @id AND status = 'pending'"
-      );
+    // --- THIS IS THE FIX ---
+    // 1. First, delete the store that is linked to the user being denied.
+    // It finds the store by looking for a match in the 'user_id' column.
+    await new sql.Request(transaction)
+      .input("user_id", sql.UniqueIdentifier, req.params.id)
+      .query("DELETE FROM stores WHERE user_id = @user_id");
 
-    if (userResult.recordset.length === 0) {
-      await transaction.rollback();
-      return res.status(404).json({ message: "Pending user not found." });
-    }
-
-    const { store_id } = userResult.recordset[0];
-
-    // Delete the user
+    // 2. Then, delete the user themselves.
     await new sql.Request(transaction)
       .input("id", sql.UniqueIdentifier, req.params.id)
-      .query("DELETE FROM users WHERE id = @id");
-
-    // If there's an associated store, delete it
-    if (store_id) {
-      await new sql.Request(transaction)
-        .input("store_id", sql.UniqueIdentifier, store_id)
-        .query("DELETE FROM stores WHERE id = @store_id");
-    }
+      .query("DELETE FROM users WHERE id = @id AND status = 'pending'");
 
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Registration denied and user deleted successfully." });
+      .json({ message: "Registration denied and associated data deleted." });
   } catch (error) {
     await transaction.rollback();
     console.error("DENY REGISTRATION ERROR:", error);
@@ -110,7 +96,7 @@ exports.createUser = async (req, res) => {
       .input("phone", sql.VarChar, phone)
       .input("notes", sql.Text, notes) // new
       .query(
-        "INSERT INTO users (name, email, password_hash, role_id, phone, notes, status) VALUES (@name, @email, @password_hash, @role_id, @phone, @notes, 'active')"
+        "INSERT INTO users (name, email, password_hash, role_id, phone, notes, status, is_first_login) VALUES (@name, @email, @password_hash, @role_id, @phone, @notes, 'active', 1)"
       );
 
     res.status(201).json({ message: "User created successfully" });
@@ -198,6 +184,124 @@ exports.getRoles = async (req, res) => {
     res.json(result.recordset);
   } catch (error) {
     console.error("GET ROLES ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Create a new customer (user and store)
+// @route   POST /api/users/customer
+exports.createCustomer = async (req, res) => {
+  const {
+    name,
+    email,
+    password,
+    phone,
+    storeName,
+    address, // Now correctly receives address
+    city, // Now correctly receives city
+    notes,
+  } = req.body;
+
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    const existingUser = await pool
+      .request()
+      .input("email", sql.VarChar, email)
+      .query("SELECT id FROM users WHERE email = @email");
+    if (existingUser.recordset.length > 0) {
+      return res
+        .status(409)
+        .json({ message: "An account with this email already exists." });
+    }
+
+    await transaction.begin();
+
+    // 1. Create the User
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+    const roleResult = await new sql.Request(transaction).query(
+      "SELECT id FROM roles WHERE name = 'customer'"
+    );
+    const customerRoleId = roleResult.recordset[0].id;
+
+    const userResult = await new sql.Request(transaction)
+      .input("name", sql.VarChar, name)
+      .input("email", sql.VarChar, email)
+      .input("password_hash", sql.Text, password_hash)
+      .input("role_id", sql.Int, customerRoleId)
+      .input("phone", sql.VarChar, phone)
+      .query(
+        "INSERT INTO users (name, email, password_hash, role_id, phone, status, is_first_login) OUTPUT INSERTED.id VALUES (@name, @email, @password_hash, @role_id, @phone, 'active', 1)"
+      );
+
+    const newUserId = userResult.recordset[0].id;
+
+    // 2. Create the Store, now including address and city
+    await new sql.Request(transaction)
+      .input("name", sql.VarChar, storeName)
+      .input("address", sql.Text, address) // Correctly uses address
+      .input("city", sql.VarChar, city) // Correctly uses city
+      .input("notes", sql.Text, notes)
+      .input("user_id", sql.UniqueIdentifier, newUserId)
+      .query(
+        "INSERT INTO stores (name, address, city, notes, user_id) VALUES (@name, @address, @city, @notes, @user_id)"
+      );
+
+    await transaction.commit();
+    res
+      .status(201)
+      .json({ message: "Customer and store created successfully." });
+  } catch (error) {
+    await transaction.rollback();
+    console.error("CREATE CUSTOMER ERROR:", error);
+    res.status(500).json({ message: "Server error during customer creation." });
+  }
+};
+
+// @desc    Change user's own password
+// @route   PUT /api/users/change-password
+// @access  Protected (any logged-in user)
+exports.changePassword = async (req, res) => {
+  const { newPassword, confirmPassword } = req.body;
+  const userId = req.user.userId;
+
+  console.log("Attempting to change password for user ID:", userId);
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+  if (!newPassword || newPassword.length < 8) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters long." });
+  }
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input("id", sql.UniqueIdentifier, userId)
+      .input("password_hash", sql.Text, password_hash)
+      .query(
+        "UPDATE users SET password_hash = @password_hash, is_first_login = 0 WHERE id = @id"
+      );
+
+    const result = await pool
+      .request()
+      .input("id", sql.UniqueIdentifier, userId)
+      .query("SELECT is_first_login FROM users WHERE id = @id");
+
+    const updatedUser = result.recordset[0];
+    console.log(
+      "DIAGNOSTIC LOG: is_first_login in database is now:",
+      updatedUser.is_first_login
+    );
+    res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("CHANGE PASSWORD ERROR:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
