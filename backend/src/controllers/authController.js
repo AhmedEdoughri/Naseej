@@ -19,7 +19,12 @@ exports.login = async (req, res) => {
     const result = await pool
       .request()
       .input("identifier", isEmail ? sql.VarChar : sql.Int, identifier).query(`
-        SELECT u.*, r.name as roleName 
+        SELECT 
+          u.id, 
+          u.password_hash,
+          u.is_first_login,
+          u.status,
+          r.name as roleName
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE ${queryField} = @identifier
@@ -50,7 +55,12 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
-    res.status(200).json({ token, role: user.roleName, userId: user.id });
+    res.status(200).json({
+      token,
+      role: user.roleName,
+      userId: user.id,
+      is_first_login: user.is_first_login,
+    });
   } catch (error) {
     console.error("LOGIN ERROR:", error);
     res.status(500).json({ message: "Server error", error: error.message });

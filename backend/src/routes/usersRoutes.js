@@ -16,6 +16,9 @@ router
   .route("/customer")
   .post(protect, authorize("admin"), usersController.createCustomer);
 
+// Route for any logged-in user to change their own password
+router.route("/change-password").put(protect, usersController.changePassword);
+
 // These routes for managing individual users remain admin-only.
 router
   .route("/:id")
