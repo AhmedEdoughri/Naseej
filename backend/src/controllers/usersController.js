@@ -8,7 +8,7 @@ exports.getUsers = async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request().query(`
-      SELECT u.id, u.name, u.email, u.status, u.role_id, r.name as roleName, u.phone, u.notes, u.store_id
+      SELECT u.id, u.name, u.email, u.status, u.role_id, r.name as roleName, u.phone, u.notes, u.user_id
       FROM users u
       JOIN roles r ON u.role_id = r.id
     `);
@@ -199,5 +199,77 @@ exports.getRoles = async (req, res) => {
   } catch (error) {
     console.error("GET ROLES ERROR:", error);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Create a new customer (user and store)
+// @route   POST /api/users/customer
+exports.createCustomer = async (req, res) => {
+  const {
+    name,
+    email,
+    password,
+    phone,
+    storeName,
+    address, // Now correctly receives address
+    city, // Now correctly receives city
+    notes,
+  } = req.body;
+
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    const existingUser = await pool
+      .request()
+      .input("email", sql.VarChar, email)
+      .query("SELECT id FROM users WHERE email = @email");
+    if (existingUser.recordset.length > 0) {
+      return res
+        .status(409)
+        .json({ message: "An account with this email already exists." });
+    }
+
+    await transaction.begin();
+
+    // 1. Create the User
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+    const roleResult = await new sql.Request(transaction).query(
+      "SELECT id FROM roles WHERE name = 'customer'"
+    );
+    const customerRoleId = roleResult.recordset[0].id;
+
+    const userResult = await new sql.Request(transaction)
+      .input("name", sql.VarChar, name)
+      .input("email", sql.VarChar, email)
+      .input("password_hash", sql.Text, password_hash)
+      .input("role_id", sql.Int, customerRoleId)
+      .input("phone", sql.VarChar, phone)
+      .query(
+        "INSERT INTO users (name, email, password_hash, role_id, phone, status) OUTPUT INSERTED.id VALUES (@name, @email, @password_hash, @role_id, @phone, 'active')"
+      );
+
+    const newUserId = userResult.recordset[0].id;
+
+    // 2. Create the Store, now including address and city
+    await new sql.Request(transaction)
+      .input("name", sql.VarChar, storeName)
+      .input("address", sql.Text, address) // Correctly uses address
+      .input("city", sql.VarChar, city) // Correctly uses city
+      .input("notes", sql.Text, notes)
+      .input("user_id", sql.UniqueIdentifier, newUserId)
+      .query(
+        "INSERT INTO stores (name, address, city, notes, user_id) VALUES (@name, @address, @city, @notes, @user_id)"
+      );
+
+    await transaction.commit();
+    res
+      .status(201)
+      .json({ message: "Customer and store created successfully." });
+  } catch (error) {
+    await transaction.rollback();
+    console.error("CREATE CUSTOMER ERROR:", error);
+    res.status(500).json({ message: "Server error during customer creation." });
   }
 };
