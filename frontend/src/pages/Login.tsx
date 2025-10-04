@@ -63,6 +63,13 @@ const Login = () => {
       const response = await api.login(identifier, password, expectedRole);
       const { token, role, userId, is_first_login } = response;
 
+      console.log(
+        "Value received from API:",
+        is_first_login,
+        "| Type:",
+        typeof is_first_login
+      );
+
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userId", userId);
