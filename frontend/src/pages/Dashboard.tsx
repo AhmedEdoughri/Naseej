@@ -123,8 +123,9 @@ export default function Dashboard() {
               : "opacity-0 -translate-y-8"
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-x-2">
+          <div className="flex items-center w-full gap-4">
+            {/* LEFT: Logo + Title */}
+            <div className="flex items-center gap-x-2 min-w-[300px]">
               <div className="relative transform transition-all duration-500 hover:scale-110">
                 <img
                   src={settings.company_logo_url || "/placeholder.svg"}
@@ -133,35 +134,34 @@ export default function Dashboard() {
                 />
                 <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-2xl blur opacity-30 animate-pulse" />
               </div>
-              <div className="flex items-center gap-x-2">
-                <div
-                  className={`p-4 rounded-xl bg-gradient-to-br ${gradient} shadow-lg transform transition-all duration-500 hover:scale-110 hover:rotate-12`}
-                >
-                  <Icon className={`h-8 w-8 ${color}`} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400">
-                    {title}
-                  </h1>
-                  <p className="text-lg text-gray-600 font-medium dark:text-gray-400">
-                    {settings.company_name || "Naseej | نسيج"}
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400">
+                  {title}
+                </h1>
+                <p className="text-lg text-gray-600 font-medium dark:text-gray-400">
+                  {settings.company_name || "Naseej | نسيج"}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-x-2">
-              <LanguageToggle />
-              <ModeToggle />
-              <div className="text-right bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-gray-800 dark:to-gray-800/50 p-4 rounded-xl shadow-sm border border-amber-200 dark:border-gray-700">
+
+            {/* CENTER: Clock card */}
+            <div className="flex-1 flex justify-center">
+              <div className="text-center bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-gray-800 dark:to-gray-800/50 p-4 rounded-xl shadow-sm border border-amber-200 dark:border-gray-700">
                 <p className="text-sm text-gray-600 font-medium dark:text-gray-400">
                   Today
                 </p>
-                <p className="font-bold text-lg text-gray-800 dark:text-gray-200 flex items-center justify-end">
+                <p className="font-bold text-lg text-gray-800 dark:text-gray-200 flex items-center justify-center gap-x-1">
                   <span>{currentDate.toLocaleDateString()}</span>
-                  <Sparkles className="h-4 w-4 mx-1 text-amber-400" />
+                  <Sparkles className="h-4 w-4 text-amber-400" />
                   <span>{currentDate.toLocaleTimeString()}</span>
                 </p>
               </div>
+            </div>
+
+            {/* RIGHT: Toggles + Logout */}
+            <div className="flex items-center gap-x-2 min-w-[200px] justify-end">
+              <LanguageToggle />
+              <ModeToggle />
               <Button
                 variant="outline"
                 size="lg"

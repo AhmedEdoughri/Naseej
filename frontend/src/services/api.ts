@@ -171,13 +171,13 @@ export const api = {
   },
 
   // --- Reports ---
-  getPickupRequestsReport: async (params: {
+  getRequestsReport: async (params: {
     startDate?: string;
     endDate?: string;
     storeId?: string;
   }) => {
     const query = new URLSearchParams(params as any).toString();
-    return fetchApi(`/reports/pickup-requests?${query}`);
+    return fetchApi(`/reports/requests?${query}`);
   },
 
   // --- Settings Management ---
@@ -202,5 +202,23 @@ export const api = {
       method: "POST",
       body: JSON.stringify(formData),
     });
+  },
+
+  // --- Requests ---
+  createRequest: async (data: {
+    total_qty: number;
+    notes?: string | null;
+    deadline: string;
+    inbound_option: "customer_dropoff" | "business_pickup";
+    outbound_option: "customer_pickup" | "business_delivery";
+  }) => {
+    return fetchApi("/requests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  getRequests: async () => {
+    return fetchApi("/requests");
   },
 };

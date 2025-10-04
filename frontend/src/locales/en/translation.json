@@ -175,9 +175,31 @@
     }
   },
 
+  "_comment4": "Confirm Password Form",
   "setNewPassword": "Set a New Password",
   "updateYourPasswordPrompt": "Update your password Prompt",
   "newPassword": "New Password",
   "confirmPassword": "Confirm Password",
-  "savePassword": "Save Password"
+  "savePassword": "Save Password",
+
+  "_comment5": "Customer Page",
+  "placeNewOrder": "Place New Order",
+  "quantity": "Total Quantity",
+  "deliveryOption": "Delivery Option",
+  "pickup": "Pickup",
+  "delivery": "Delivery",
+  "deadline": "Deadline",
+  "submitOrder": "Submit Order",
+  "dashboardSubtitle_customer": "Track your orders and place new requests.",
+  "recentRequests": "Recent Requests",
+  "inboundLogistics": "How will we receive the items?",
+  "customerDropoff": "I will drop them off",
+  "businessPickup": "Pick them up from me",
+  "outboundLogistics": "How will you receive them back?",
+  "customerPickup": "I will pick them up",
+  "businessDelivery": "Deliver them to me",
+  "submitting": "Submitting...",
+  "success_orderPlaced": "Order placed successfully!",
+  "error_orderFailed": "Failed to place order. Please try again.",
+  "error_fillAllFields": "Please fill out all required fields."
 }

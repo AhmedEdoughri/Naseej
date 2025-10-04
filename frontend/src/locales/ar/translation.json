@@ -174,9 +174,32 @@
       "deleteStore": "هل أنت متأكد؟"
     }
   },
+
+  "_comment4": "Confirm Password Form",
   "setNewPassword": "حدد كلمة مرور جديدة",
   "updateYourPasswordPrompt": "تذكير بتحديث كلمة المرور",
   "newPassword": "كلمة المرور الجديدة",
   "confirmPassword": "تأكيد كلمة المرور",
-  "savePassword": "حفظ كلمة المرور"
+  "savePassword": "حفظ كلمة المرور",
+
+  "_comment5": "Customer Page",
+  "placeNewOrder": "تقديم طلب جديد",
+  "quantity": "الكمية الإجمالية",
+  "deliveryOption": "خيار التوصيل",
+  "pickup": "استلام",
+  "delivery": "توصيل",
+  "deadline": "الموعد النهائي",
+  "submitOrder": "إرسال الطلب",
+  "dashboardSubtitle_customer": "تتبع طلباتك وقدم طلبات جديدة",
+  "recentRequests": "الطلبات الأخيرة",
+  "inboundLogistics": "كيف سنستلم المنتجات؟",
+  "customerDropoff": "سأقوم بتسليمها بنفسي",
+  "businessPickup": "استلموها من عندي",
+  "outboundLogistics": "كيف ستستلمها بعد الانتهاء؟",
+  "customerPickup": "سأستلمها بنفسي",
+  "businessDelivery": "قوموا بتوصيلها لي",
+  "submitting": "جاري الإرسال...",
+  "success_orderPlaced": "تم إرسال الطلب بنجاح!",
+  "error_orderFailed": "فشل في إرسال الطلب. يرجى المحاولة مرة أخرى.",
+  "error_fillAllFields": "يرجى ملء جميع الحقول المطلوبة."
 }
