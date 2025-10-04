@@ -908,7 +908,7 @@ const AdminPanel = () => {
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left: Title and Subtitle */}
-            <div className="flex items-center space-x-6 flex-wrap">
+            <div className="flex items-center space-x-6 flex-wrap min-w-[350px]">
               <div className="relative transform transition-all duration-500 hover:scale-110">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg">
                   <Crown className="h-8 w-8 text-white" />
@@ -943,7 +943,7 @@ const AdminPanel = () => {
             </div>
 
             {/* Right: Language, Mode Toggle, Logout */}
-            <div className="flex items-center gap-4 flex-nowrap">
+            <div className="flex items-center gap-4 flex-nowrap min-w-[300px] justify-end">
               <LanguageToggle />
               <ModeToggle />
               <AnimatedActionButton
