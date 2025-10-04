@@ -227,8 +227,8 @@ export const UserForm = ({ user, roles, onSubmit, onClose }: UserFormProps) => {
               <SelectItem value="active">
                 {t("adminPanel.statuses.active")}
               </SelectItem>
-              <SelectItem value="locked">
-                {t("adminPanel.statuses.locked")}
+              <SelectItem value="Deactivated">
+                {t("adminPanel.statuses.Deactivated")}
               </SelectItem>
             </SelectContent>
           </Select>
