@@ -55,6 +55,8 @@ import {
   Clock,
   Sparkles,
   Crown,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { StoreForm } from "../components/StoreForm";
 import { UserForm } from "../components/UserForm";
@@ -63,6 +65,7 @@ import { DraggableStatusRow } from "../components/DraggableStatusRow";
 import { ModeToggle } from "@/components/mode-toggle";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { SettingsTab } from "../components/SettingsTab";
+import { InfoCard } from "../components/InfoCard";
 
 // --- Type Definitions ---
 interface User {
@@ -317,6 +320,14 @@ const AdminPanel = () => {
   const [isContentVisible, setIsContentVisible] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const { t, i18n } = useTranslation();
+  const [userView, setUserView] = useState<"card" | "table">("card");
+  const [customerView, setCustomerView] = useState<"card" | "table">("card");
+  const [userStatusFilter, setUserStatusFilter] = useState<
+    "all" | "active" | "Deactivated"
+  >("all");
+  const [customerStatusFilter, setCustomerStatusFilter] = useState<
+    "all" | "active" | "Deactivated"
+  >("all");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentDate(new Date()), 1000);
@@ -389,7 +400,9 @@ const AdminPanel = () => {
       (user) =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.roleName.toLowerCase().includes(searchTerm.toLowerCase())
+        user.roleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // --- THIS IS THE NEW LINE ---
+        String(user.user_id).includes(searchTerm)
     );
 
     if (sortConfig !== null) {
@@ -415,7 +428,7 @@ const AdminPanel = () => {
           return sortConfig.direction === "ascending" ? result : -result;
         }
 
-        // Default sorting for other columns
+        // Default sorting for other columns (this will work for user_id)
         if (a[sortConfig.key] < b[sortConfig.key]) {
           return sortConfig.direction === "ascending" ? -1 : 1;
         }
@@ -632,6 +645,31 @@ const AdminPanel = () => {
     }
   };
 
+  const sortCards = (items: any[]) => {
+    if (!sortConfig) return items;
+
+    return [...items].sort((a, b) => {
+      if (sortConfig.key === "roleName") {
+        const rolePriority: { [key: string]: number } = {
+          admin: 1,
+          manager: 2,
+        };
+        const aPriority = rolePriority[a.roleName] || 99;
+        const bPriority = rolePriority[b.roleName] || 99;
+        return sortConfig.direction === "ascending"
+          ? aPriority - bPriority
+          : bPriority - aPriority;
+      }
+
+      const aVal = a[sortConfig.key]?.toString().toLowerCase() || "";
+      const bVal = b[sortConfig.key]?.toString().toLowerCase() || "";
+
+      if (aVal < bVal) return sortConfig.direction === "ascending" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "ascending" ? 1 : -1;
+      return 0;
+    });
+  };
+
   const SortableHeader = ({
     sortKey,
     children,
@@ -640,33 +678,56 @@ const AdminPanel = () => {
     sortKey: SortKey;
     children: React.ReactNode;
     className?: string;
-  }) => (
-    <TableHead className={className}>
-      <AnimatedActionButton
-        variant="ghost"
-        size="default"
-        onClick={() => requestSort(sortKey)}
-        className="hover:bg-transparent hover:text-amber-700 dark:hover:text-amber-400"
-      >
-        {children}
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </AnimatedActionButton>
-    </TableHead>
-  );
+  }) => {
+    const isActive = sortConfig?.key === sortKey;
+    const direction = sortConfig?.direction;
+
+    return (
+      <TableHead className={className}>
+        <AnimatedActionButton
+          variant="ghost"
+          size="default"
+          onClick={() => requestSort(sortKey)}
+          className={`hover:bg-transparent hover:text-amber-700 dark:hover:text-amber-400 ${
+            isActive ? "text-amber-600 dark:text-amber-400 font-semibold" : ""
+          }`}
+        >
+          {children}
+          <ArrowUpDown
+            className={`ml-2 h-4 w-4 transition-transform ${
+              isActive && direction === "descending" ? "rotate-180" : ""
+            }`}
+          />
+        </AnimatedActionButton>
+      </TableHead>
+    );
+  };
+
+  const filteredUsers = processedAllUsers.filter((user) => {
+    if (userStatusFilter === "all") return true;
+    return user.status === userStatusFilter;
+  });
+
+  const filteredCustomers = stores.filter((customer) => {
+    if (customerStatusFilter === "all") return true;
+    return customer.status === customerStatusFilter;
+  });
 
   const renderUserTable = (userList: User[], startDelay = 0) => (
     <Table dir={i18n.dir()} className="w-full">
       <TableHeader>
-        <TableRow className="dark:border-gray-800">
+        <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800/50 dark:to-gray-800/20 dark:border-gray-800">
           <SortableHeader
             sortKey="name"
             className="whitespace-nowrap text-center"
           >
             {t("adminPanel.tableHeaders.name")}
           </SortableHeader>
-          <TableHead className="whitespace-nowrap text-center">
+
+          <SortableHeader sortKey="user_id" className="text-center">
             {t("adminPanel.tableHeaders.userId", "User ID")}
-          </TableHead>
+          </SortableHeader>
+
           <SortableHeader
             sortKey="email"
             className="whitespace-nowrap text-center"
@@ -730,7 +791,7 @@ const AdminPanel = () => {
                 ${
                   user.status === "pending"
                     ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
-                    : user.status === "locked"
+                    : user.status === "Deactivated"
                     ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
                     : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
                 }
@@ -836,16 +897,17 @@ const AdminPanel = () => {
         <header
           dir="ltr"
           className={`
-            bg-white/90 dark:bg-gray-900/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-gray-800 mb-8
-            transform transition-all duration-1000 ease-out
-            ${
-              isHeaderVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-8"
-            }
-          `}
+        bg-white/90 dark:bg-gray-900/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-gray-800 mb-8
+        transform transition-all duration-1000 ease-out
+        ${
+          isHeaderVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-8"
+        }
+      `}
         >
-          <div className="flex justify-between items-center flex-wrap">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Left: Title and Subtitle */}
             <div className="flex items-center space-x-6 flex-wrap">
               <div className="relative transform transition-all duration-500 hover:scale-110">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg">
@@ -865,7 +927,8 @@ const AdminPanel = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 flex-nowrap">
+            {/* Center: Clock card */}
+            <div className="flex-1 flex justify-center">
               <div className="text-center bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-gray-800 dark:to-gray-800/50 p-4 rounded-xl shadow-sm border border-amber-200 dark:border-gray-700">
                 <p className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center justify-center gap-x-1">
                   <Clock className="h-4 w-4 mr-1" />
@@ -877,7 +940,10 @@ const AdminPanel = () => {
                   <span>{currentDate.toLocaleTimeString()}</span>
                 </p>
               </div>
+            </div>
 
+            {/* Right: Language, Mode Toggle, Logout */}
+            <div className="flex items-center gap-4 flex-nowrap">
               <LanguageToggle />
               <ModeToggle />
               <AnimatedActionButton
@@ -1001,6 +1067,33 @@ const AdminPanel = () => {
                     </AnimatedActionButton>
                   )}
                 </div>
+
+                <div className="absolute left-1/2 transform -translate-x-1/2">
+                  <div className="inline-flex rounded-full border border-amber-200 dark:border-gray-700 overflow-hidden">
+                    {["all", "active", "Deactivated"].map((status, index) => (
+                      <button
+                        key={status}
+                        onClick={() => setUserStatusFilter(status as any)}
+                        className={`px-4 py-2 text-sm font-medium focus:outline-none transition-colors ${
+                          userStatusFilter === status
+                            ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                            : "bg-amber-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-gray-700"
+                        } ${
+                          index !== 0
+                            ? "border-l border-amber-200 dark:border-gray-700"
+                            : ""
+                        }`}
+                      >
+                        {status === "all"
+                          ? "All"
+                          : status === "active"
+                          ? "Active"
+                          : "Deactivated"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <AnimatedActionButton
                   size="default"
                   onClick={() => {
@@ -1013,6 +1106,40 @@ const AdminPanel = () => {
                   {t("adminPanel.users.addNewUser")}
                 </AnimatedActionButton>
               </div>
+
+              <div className="flex justify-center w-full">
+                <div className="p-1 bg-amber-50 dark:bg-gray-800 rounded-lg flex items-center space-x-1">
+                  <Button
+                    variant={userView === "card" ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => setUserView("card")}
+                    title="Card View"
+                    // Apply gradient style when active
+                    className={
+                      userView === "card"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                        : "hover:bg-amber-100 dark:hover:bg-gray-700"
+                    }
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={userView === "table" ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => setUserView("table")}
+                    title="Table View"
+                    // Apply gradient style when active
+                    className={
+                      userView === "table"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                        : "hover:bg-amber-100 dark:hover:bg-gray-700"
+                    }
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
               <Tabs
                 value={userTab}
                 onValueChange={setUserTab}
@@ -1064,131 +1191,255 @@ const AdminPanel = () => {
                     )}
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="all" className="p-0">
-                  {renderUserTable(processedAllUsers, 0)}
+                <TabsContent value="all" className="p-4 md:p-6">
+                  {userView === "card" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {sortCards(filteredUsers).map((user, index) => (
+                        <InfoCard
+                          key={user.id}
+                          item={user}
+                          type="user"
+                          delay={index * 50}
+                          onEdit={() => {
+                            setEditingUser(user);
+                            setIsUserDialogOpen(true);
+                          }}
+                          onDelete={() => handleDeleteUser(user.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    renderUserTable(filteredUsers)
+                  )}
                 </TabsContent>
-                <TabsContent value="pending" className="p-0">
-                  {renderUserTable(processedPendingUsers, 0)}
+
+                <TabsContent value="pending" className="p-4 md:p-6">
+                  {userView === "card" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {sortCards(pendingUsers).map((user, index) => (
+                        <InfoCard
+                          key={user.id}
+                          item={user}
+                          type="user"
+                          delay={index * 50}
+                          onEdit={() => {
+                            setEditingUser(user);
+                            setIsUserDialogOpen(true);
+                          }}
+                          onDelete={() => handleDeleteUser(user.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    renderUserTable(processedPendingUsers)
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
           </TabsContent>
 
           <TabsContent value="stores">
-            <div className="bg-white/80 dark:bg-gray-900/80 ...">
-              <div className="flex justify-between items-center mb-6 flex-wrap">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-amber-200 dark:border-gray-800 rounded-2xl mt-6 shadow-xl overflow-hidden">
+              {/* Header with icon and "Add New Store" button */}
+              <div className="flex justify-between items-center p-6 border-b border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800/50 dark:to-gray-800/20 flex-wrap">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500">
-                    <Building className="h-6 w-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold ...">Partner Stores</h2>
+                  <Building className="h-6 w-6 text-amber-500" />
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    Partner Customers
+                  </h2>
                 </div>
-                {/* This button now opens the UserForm to create a new customer */}
+
+                <div className="absolute left-1/2 transform -translate-x-1/2">
+                  <div className="inline-flex rounded-full border border-amber-200 dark:border-gray-700 overflow-hidden">
+                    {["all", "active", "Deactivated"].map((status, index) => (
+                      <button
+                        key={status}
+                        onClick={() => setCustomerStatusFilter(status as any)}
+                        className={`px-4 py-2 text-sm font-medium focus:outline-none transition-colors ${
+                          customerStatusFilter === status
+                            ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                            : "bg-amber-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-gray-700"
+                        } ${
+                          index !== 0
+                            ? "border-l border-amber-200 dark:border-gray-700"
+                            : ""
+                        }`}
+                      >
+                        {status === "all"
+                          ? "All"
+                          : status === "active"
+                          ? "Active"
+                          : "Deactivated"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <AnimatedActionButton
                   size="default"
                   onClick={() => {
                     setEditingStore(null);
                     setIsStoreDialogOpen(true);
                   }}
-                  className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white ..."
+                  className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-lg hover:from-amber-500 hover:to-yellow-600"
                 >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add a New Store
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add a New Customer
                 </AnimatedActionButton>
               </div>
-              <div className="overflow-hidden rounded-xl border ...">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50 ...">
-                      <TableHead className="text-center ...">
-                        Store Name
-                      </TableHead>
-                      <TableHead className="text-center ...">
-                        Contact Name
-                      </TableHead>
-                      <TableHead className="text-center ...">User ID</TableHead>
-                      <TableHead className="text-center ...">Phone</TableHead>
-                      <TableHead className="text-center ...">Address</TableHead>
-                      <TableHead className="text-center ...">City</TableHead>
-                      <TableHead className="text-center ...">Status</TableHead>
-                      <TableHead className="text-center ...">Notes</TableHead>
-                      <TableHead className="text-center ...">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stores.map((customer, index) => (
-                      <AnimatedTableRow
-                        key={customer.store_id}
-                        delay={index * 100}
-                      >
-                        <TableCell className="text-center font-medium">
-                          {customer.storeName}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {customer.contact_name}
-                        </TableCell>
-                        <TableCell className="text-center text-sm text-gray-500 dark:text-gray-400">
-                          {customer.user_id}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {customer.contact_phone}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {customer.address}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-center ...">
-                            {customer.city}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span
-                            className={`capitalize ... ${
-                              customer.status === "pending"
-                                ? "bg-yellow-100 ..."
-                                : customer.status === "locked"
-                                ? "bg-red-100 ..."
-                                : "bg-green-100 ..."
-                            }`}
-                          >
-                            {t(
-                              `adminPanel.statuses.${customer.status?.toLowerCase()}`,
-                              { defaultValue: customer.status }
-                            )}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {customer.storeNotes}
-                        </TableCell>
-                        <TableCell className="text-center space-x-2">
-                          <AnimatedActionButton
-                            onClick={() => {
-                              const formCompatibleStore: StoreFormData = {
-                                id: customer.store_id,
-                                name: customer.contact_name,
-                                phone: customer.contact_phone,
-                                storeName: customer.storeName,
-                                address: customer.address,
-                                city: customer.city,
-                                notes: customer.storeNotes,
-                              };
-                              setEditingStore(formCompatibleStore);
-                              setIsStoreDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </AnimatedActionButton>
-                          <AnimatedActionButton
-                            onClick={() => handleDeleteStore(customer.store_id)}
-                            className="hover:bg-red-100 ..."
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </AnimatedActionButton>
-                        </TableCell>
-                      </AnimatedTableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+
+              {/* Card / Table toggle */}
+              <div className="flex justify-center w-full mb-4">
+                <div className="p-1 bg-amber-50 dark:bg-gray-800 rounded-lg flex items-center space-x-1">
+                  <Button
+                    variant={customerView === "card" ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => setCustomerView("card")}
+                    title="Card View"
+                    className={
+                      customerView === "card"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                        : "hover:bg-amber-100 dark:hover:bg-gray-700"
+                    }
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={customerView === "table" ? "default" : "ghost"}
+                    size="icon"
+                    onClick={() => setCustomerView("table")}
+                    title="Table View"
+                    className={
+                      customerView === "table"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
+                        : "hover:bg-amber-100 dark:hover:bg-gray-700"
+                    }
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+
+              {customerView === "card" ? (
+                // --- CARD VIEW ---
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 md:p-6">
+                  {filteredCustomers.map((customer, index) => (
+                    <InfoCard
+                      key={customer.store_id}
+                      item={customer}
+                      type="customer"
+                      delay={index * 50}
+                      onEdit={() => {
+                        const formCompatibleStore: StoreFormData = {
+                          id: customer.store_id,
+                          name: customer.contact_name,
+                          phone: customer.contact_phone,
+                          storeName: customer.storeName,
+                          address: customer.address,
+                          city: customer.city,
+                          notes: customer.storeNotes,
+                        };
+                        setEditingStore(formCompatibleStore);
+                        setIsStoreDialogOpen(true);
+                      }}
+                      onDelete={() => handleDeleteUser(customer.store_id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                // --- TABLE VIEW ---
+                <div className="overflow-hidden rounded-xl border p-4 md:p-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50">
+                        <TableHead className="text-center">
+                          Store Name
+                        </TableHead>
+                        <TableHead className="text-center">
+                          Contact Name
+                        </TableHead>
+                        <TableHead className="text-center">User ID</TableHead>
+                        <TableHead className="text-center">Phone</TableHead>
+                        <TableHead className="text-center">Address</TableHead>
+                        <TableHead className="text-center">City</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-center">Notes</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCustomers.map((store, index) => (
+                        <AnimatedTableRow
+                          key={store.store_id}
+                          delay={index * 100}
+                        >
+                          <TableCell className="text-center font-medium">
+                            {store.storeName}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.contact_name}
+                          </TableCell>
+                          <TableCell className="text-center text-sm text-gray-500 dark:text-gray-400">
+                            {store.user_id}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.contact_phone}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.address}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.city}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={`capitalize px-3 py-1 text-xs font-semibold rounded-full ${
+                                store.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 animate-pulse"
+                                  : store.status === "Deactivated"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                                  : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                              }`}
+                            >
+                              {t(
+                                `adminPanel.statuses.${store.status?.toLowerCase()}`,
+                                { defaultValue: store.status }
+                              )}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.storeNotes}
+                          </TableCell>
+                          <TableCell className="text-center space-x-2">
+                            <AnimatedActionButton
+                              onClick={() => {
+                                const formCompatibleStore: StoreFormData = {
+                                  id: store.store_id,
+                                  name: store.contact_name,
+                                  phone: store.contact_phone,
+                                  storeName: store.storeName,
+                                  address: store.address,
+                                  city: store.city,
+                                  notes: store.storeNotes,
+                                };
+                                setEditingStore(formCompatibleStore);
+                                setIsStoreDialogOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </AnimatedActionButton>
+                            <AnimatedActionButton
+                              onClick={() => handleDeleteStore(store.store_id)}
+                              className="hover:bg-red-100"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </AnimatedActionButton>
+                          </TableCell>
+                        </AnimatedTableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -1333,8 +1584,9 @@ const AdminPanel = () => {
         <Dialog open={isStoreDialogOpen} onOpenChange={setIsStoreDialogOpen}>
           <DialogContent /* ... */>
             <DialogHeader>
-              <DialogTitle /* ... */>
-                <Building /* ... */ /> Edit Store Details
+              <DialogTitle className="flex items-center gap-2">
+                <Building className="h-6 w-6 text-amber-500" />
+                <span>Edit Store Details</span>
               </DialogTitle>
             </DialogHeader>
             <StoreForm

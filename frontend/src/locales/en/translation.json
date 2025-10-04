@@ -142,7 +142,7 @@
     "statuses": {
       "active": "Active",
       "pending": "Pending",
-      "locked": "Locked"
+      "Deactivated": "Deactivated"
     },
     "toasts": {
       "orderSavedSuccess": "Order saved successfully!",

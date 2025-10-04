@@ -18,11 +18,22 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
     });
 
     if (!response.ok) {
+      // Check if the error is specifically a 401 Unauthorized
+      if (response.status === 401) {
+        // Clear all stored user data
+        localStorage.clear();
+        // Force a redirect to the home page, which will then show the login options
+        window.location.href = "/";
+        // Throw an error to stop the current function from proceeding
+        throw new Error("Session expired. Redirecting...");
+      }
+
       const errorData = await response.json();
       throw new Error(
         errorData.message || `API call failed: ${response.statusText}`
       );
     }
+
     if (
       response.status === 204 ||
       response.headers.get("content-length") === "0"

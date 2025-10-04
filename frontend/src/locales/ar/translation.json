@@ -142,7 +142,7 @@
     "statuses": {
       "active": "نشط",
       "pending": "معلق",
-      "locked": "مغلق"
+      "Deactivated": "غير مفعل"
     },
     "toasts": {
       "orderSavedSuccess": "تم حفظ الترتيب بنجاح!",
