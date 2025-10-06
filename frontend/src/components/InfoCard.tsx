@@ -25,6 +25,8 @@ interface CardProps {
   type: "user" | "customer";
   onEdit: () => void;
   onDelete: () => void;
+  onApprove?: () => void;
+  onDeny?: () => void;
   delay?: number;
 }
 
@@ -33,6 +35,8 @@ export const InfoCard = ({
   type,
   onEdit,
   onDelete,
+  onApprove,
+  onDeny,
   delay = 0,
 }: CardProps) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -225,6 +229,37 @@ export const InfoCard = ({
           </Dialog>
         </div>
       </div>
+      {/* Approve / Deny buttons for pending users */}
+      {type === "user" &&
+        item.status === "pending" &&
+        (onApprove || onDeny) && (
+          <div className="flex justify-center space-x-2 mt-4">
+            {onApprove && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onApprove();
+                }}
+                size="sm"
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                Approve
+              </Button>
+            )}
+            {onDeny && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeny();
+                }}
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Deny
+              </Button>
+            )}
+          </div>
+        )}
     </div>
   );
 };

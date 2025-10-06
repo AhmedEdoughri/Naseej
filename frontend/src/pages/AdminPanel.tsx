@@ -1227,6 +1227,8 @@ const AdminPanel = () => {
                             setIsUserDialogOpen(true);
                           }}
                           onDelete={() => handleDeleteUser(user.id)}
+                          onApprove={() => handleApproveUser(user.id)}
+                          onDeny={() => handleDenyRegistration(user.id)}
                         />
                       ))}
                     </div>

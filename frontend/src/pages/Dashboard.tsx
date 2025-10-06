@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   LogOut,
   Store,
@@ -124,23 +124,21 @@ export default function Dashboard() {
           }`}
         >
           <div className="flex items-center w-full gap-4">
-            {/* LEFT: Logo + Title */}
+            {/* LEFT: Logo + Title + Icon */}
             <div className="flex items-center gap-x-2 min-w-[300px]">
               <div className="relative transform transition-all duration-500 hover:scale-110">
-                <img
-                  src={settings.company_logo_url || "/placeholder.svg"}
-                  alt="Company Logo"
-                  className="h-16 w-16 object-contain rounded-2xl shadow-lg border-2 border-amber-200 dark:border-gray-700"
-                />
                 <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-2xl blur opacity-30 animate-pulse" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400">
-                  {title}
-                </h1>
-                <p className="text-lg text-gray-600 font-medium dark:text-gray-400">
-                  {settings.company_name || "Naseej | نسيج"}
-                </p>
+              <div className="flex items-center gap-x-2">
+                <Icon className={`h-10 w-10 ${color}`} />
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400">
+                    {title}
+                  </h1>
+                  <p className="text-lg text-gray-600 font-medium dark:text-gray-400">
+                    {settings.company_name || "Naseej | نسيج"}
+                  </p>
+                </div>
               </div>
             </div>
 

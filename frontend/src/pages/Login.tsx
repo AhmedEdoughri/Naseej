@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../services/api";
+import { toast } from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import {
   Store,
@@ -59,25 +60,33 @@ const Login = () => {
     const expectedRole = searchParams.get("role");
 
     try {
-      // --- CHANGE 2: Pass the 'identifier' to the API ---
       const response = await api.login(identifier, password, expectedRole);
-      const { token, role, userId, is_first_login } = response;
 
-      console.log(
-        "Value received from API:",
-        is_first_login,
-        "| Type:",
-        typeof is_first_login
-      );
+      // 🧩 Safety check before destructuring
+      if (!response || !response.token) {
+        toast.error(t("invalidCredentials") || "Invalid email or password.");
+        setError(t("invalidCredentials") || "Invalid email or password.");
+        return;
+      }
+
+      const { token, role, userId, is_first_login } = response;
 
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userId", userId);
 
-      const employeeRoles = ["worker", "driver", "manager"];
-      if (is_first_login && employeeRoles.includes(role)) {
+      const firstLoginRoles = [
+        "worker",
+        "driver",
+        "manager",
+        "customer",
+        "admin",
+      ];
+
+      if (is_first_login && firstLoginRoles.includes(role)) {
         setIsFirstLogin(true);
       } else {
+        // regular navigation
         if (role === "admin") {
           navigate("/admin");
         } else {
@@ -86,10 +95,14 @@ const Login = () => {
       }
     } catch (err: any) {
       console.error("Login failed:", err);
-      if (err.message) {
-        setError(t(err.message));
+
+      // 🧠 Check if backend returned "invalid_credentials"
+      if (err.message && err.message.includes("invalid_credentials")) {
+        toast.error(t("invalidCredentials") || "Invalid email or password.");
+        setError(t("invalidCredentials") || "Invalid email or password.");
       } else {
-        setError(t("login_failed_generic"));
+        toast.error(err.message || t("login_failed_generic"));
+        setError(err.message || t("login_failed_generic"));
       }
     } finally {
       setIsLoading(false);

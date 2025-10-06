@@ -1,4 +1,5 @@
 const API_BASE_URL = "http://localhost:5000/api";
+import { toast } from "react-hot-toast";
 
 const fetchApi = async (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("token");
@@ -17,18 +18,17 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
       headers,
     });
 
+    // Handle unauthorized responses differently based on context
     if (!response.ok) {
-      // Check if the error is specifically a 401 Unauthorized
-      if (response.status === 401) {
-        // Clear all stored user data
+      const errorData = await response.json().catch(() => ({}));
+
+      // Only force logout for authenticated routes (not /auth/login)
+      if (response.status === 401 && !url.includes("/auth/login")) {
         localStorage.clear();
-        // Force a redirect to the home page, which will then show the login options
         window.location.href = "/";
-        // Throw an error to stop the current function from proceeding
         throw new Error("Session expired. Redirecting...");
       }
 
-      const errorData = await response.json();
       throw new Error(
         errorData.message || `API call failed: ${response.statusText}`
       );
@@ -40,10 +40,14 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
     ) {
       return { success: true };
     }
+
     return response.json();
   } catch (error) {
-    console.error("API service error:", error);
-    throw error;
+    if (error.message.includes("invalid_credentials")) {
+      toast.error("Invalid email or password. Please try again.");
+    } else {
+      toast.error(error.message);
+    }
   }
 };
 
