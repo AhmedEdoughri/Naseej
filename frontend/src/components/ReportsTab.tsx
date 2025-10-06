@@ -108,9 +108,11 @@ export const ReportsTab = () => {
             <SelectValue placeholder="All Stores" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Stores</SelectItem>
-            {stores.map((store) => (
-              <SelectItem key={store.id} value={store.id}>
+            <SelectItem key="all" value="all">
+              All Stores
+            </SelectItem>
+            {stores.map((store, index) => (
+              <SelectItem key={`${store.id}-${index}`} value={store.id}>
                 {store.name}
               </SelectItem>
             ))}

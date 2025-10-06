@@ -11,21 +11,18 @@ export const ManagerDashboard = () => (
         value={23}
         icon={Package}
         color="info"
-        delay={0}
       />
       <EnhancedMetricCard
         title="Pending Pickup"
         value={7}
         icon={AlertCircle}
         color="warning"
-        delay={100}
       />
       <EnhancedMetricCard
         title="Ready for Delivery"
         value={8}
         icon={Truck}
         color="primary"
-        delay={200}
       />
       <EnhancedMetricCard
         title="Daily Completions"
@@ -33,7 +30,6 @@ export const ManagerDashboard = () => (
         icon={BarChart3}
         color="success"
         trend={{ value: 8, isPositive: true }}
-        delay={300}
       />
     </div>
 

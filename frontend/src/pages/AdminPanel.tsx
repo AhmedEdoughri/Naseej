@@ -896,65 +896,62 @@ const AdminPanel = () => {
       <div className="relative z-10 container mx-auto p-6">
         <header
           dir="ltr"
-          className={`
-        bg-white/90 dark:bg-gray-900/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-gray-800 mb-8
-        transform transition-all duration-1000 ease-out
-        ${
-          isHeaderVisible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-8"
-        }
-      `}
+          className={`bg-white/90 dark:bg-gray-900/80 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-gray-800 mb-8 transform transition-all duration-1000 ease-out hover:shadow-3xl ${
+            isHeaderVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-8"
+          }`}
         >
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Left: Title and Subtitle */}
-            <div className="flex items-center space-x-6 flex-wrap min-w-[350px]">
-              <div className="relative transform transition-all duration-500 hover:scale-110">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg">
-                  <Crown className="h-8 w-8 text-white" />
-                </div>
-                <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-xl blur opacity-30 animate-pulse" />
+          <div className="flex flex-col lg:flex-row items-center w-full gap-4">
+            {/* Left: Crown Icon + Title */}
+            <div className="flex items-center gap-x-3 min-w-[250px]">
+              <div className="p-3 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl shadow-lg transform hover:scale-110 transition-transform duration-300">
+                <Crown className="h-7 w-7 text-white" />
               </div>
-
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400 py-2">
-                  {t("adminPanel.title")}
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400">
+                  Admin Panel
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400 font-medium flex items-center">
-                  <Shield className="h-5 w-5 mr-2 text-amber-600 dark:text-amber-400" />
-                  {t("adminPanel.subtitle")}
+                <p className="text-sm sm:text-base text-gray-600 font-medium dark:text-gray-400 flex items-center gap-1">
+                  Naseej | نسيج
                 </p>
               </div>
             </div>
 
             {/* Center: Clock card */}
-            <div className="flex-1 flex justify-center">
-              <div className="text-center bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-gray-800 dark:to-gray-800/50 p-4 rounded-xl shadow-sm border border-amber-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center justify-center gap-x-1">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {t("adminPanel.today")}
+            <div className="flex-1 flex justify-center w-full lg:w-auto">
+              <div className="group relative text-center bg-gradient-to-br from-amber-100 via-yellow-100 to-amber-50 dark:from-gray-800 dark:via-gray-800/80 dark:to-gray-800/50 px-6 py-3 rounded-xl shadow-lg border-2 border-amber-300/50 dark:border-amber-700/30 hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-300 hover:scale-[1.03] cursor-default overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-200/0 via-yellow-200/40 to-amber-200/0 dark:from-amber-600/0 dark:via-amber-500/10 dark:to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <p className="relative text-xs text-amber-700 font-semibold dark:text-amber-400 mb-1 tracking-wide">
+                  TODAY
                 </p>
-                <p className="font-bold text-lg text-gray-800 dark:text-gray-200 flex items-center justify-center">
-                  <span>{currentDate.toLocaleDateString()}</span>
-                  <Sparkles className="h-4 w-4 mx-1 text-amber-400" />
-                  <span>{currentDate.toLocaleTimeString()}</span>
+                <p className="relative font-bold text-base sm:text-lg text-gray-900 dark:text-gray-100 flex items-center justify-center gap-x-2 flex-wrap">
+                  <span className="text-amber-800 dark:text-amber-300">
+                    {currentDate.toLocaleDateString()}
+                  </span>
+                  <Sparkles className="h-4 w-4 text-amber-500 dark:text-amber-400 animate-pulse" />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {currentDate.toLocaleTimeString()}
+                  </span>
                 </p>
               </div>
             </div>
 
             {/* Right: Language, Mode Toggle, Logout */}
-            <div className="flex items-center gap-4 flex-nowrap min-w-[300px] justify-end">
-              <LanguageToggle />
-              <ModeToggle />
-              <AnimatedActionButton
-                variant="outline"
-                size="default"
+            <div className="flex items-center gap-x-2 min-w-[200px] justify-end relative dropdown-container">
+              <div className="flex gap-2 p-1.5 bg-gradient-to-r from-amber-100/50 to-yellow-100/50 dark:from-gray-800/50 dark:to-gray-800/30 rounded-lg border border-amber-200/50 dark:border-gray-700/50 shadow-sm">
+                <LanguageToggle />
+                <ModeToggle />
+              </div>
+
+              {/* For admin, you can keep it simple: Logout only */}
+              <button
                 onClick={handleLogout}
-                className="shadow-lg border-2 border-amber-200 hover:border-amber-400 hover:bg-amber-50 dark:border-gray-700 dark:hover:border-amber-600 dark:hover:bg-gray-800 min-w-[145px] flex justify-center"
+                className="group relative px-5 py-2.5 bg-gradient-to-br from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.05] active:scale-95 border border-amber-400/30 overflow-hidden flex items-center justify-center gap-2"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                {t("adminPanel.logout")}
-              </AnimatedActionButton>
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
             </div>
           </div>
         </header>

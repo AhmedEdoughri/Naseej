@@ -48,6 +48,7 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
     } else {
       toast.error(error.message);
     }
+    throw error;
   }
 };
 
@@ -63,13 +64,6 @@ export const api = {
     return fetchApi("/auth/register-store", {
       method: "POST",
       body: JSON.stringify(data),
-    });
-  },
-
-  changePassword: async (newPassword: string, confirmPassword: string) => {
-    return fetchApi("/users/change-password", {
-      method: "PUT",
-      body: JSON.stringify({ newPassword, confirmPassword }),
     });
   },
 
@@ -224,5 +218,34 @@ export const api = {
 
   getRequests: async () => {
     return fetchApi("/requests");
+  },
+
+  // -- login auth for firs time --
+  changePassword: async (newPassword: string, confirmPassword: string) => {
+    return fetchApi("/users/change-password", {
+      method: "PUT",
+      body: JSON.stringify({ newPassword, confirmPassword }),
+    });
+  },
+
+  // -- Main Dashboard Header --
+  updatePassword: async ({
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  }: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    return fetchApi("/users/update-password", {
+      method: "PUT",
+      body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+    });
+  },
+
+  // -- Customer --
+  getCustomers: async () => {
+    return fetchApi("/customers");
   },
 };

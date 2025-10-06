@@ -299,3 +299,66 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
+// PUT /api/users/update-password
+exports.updatePassword = async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  const userId = req.user.userId;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: "Passwords do not match." });
+  }
+
+  if (newPassword.length < 8) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters long." });
+  }
+
+  if (newPassword === currentPassword) {
+    return res
+      .status(400)
+      .json({
+        message: "New password cannot be the same as the current password.",
+      });
+  }
+
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("id", sql.UniqueIdentifier, userId)
+      .query("SELECT password_hash FROM users WHERE id = @id");
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const user = result.recordset[0];
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(newPassword, salt);
+
+    await pool
+      .request()
+      .input("id", sql.UniqueIdentifier, userId)
+      .input("password_hash", sql.Text, password_hash)
+      .query("UPDATE users SET password_hash = @password_hash WHERE id = @id");
+
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    console.error("UPDATE PASSWORD ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
