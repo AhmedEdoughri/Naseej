@@ -19,6 +19,9 @@ router
 // Route for any logged-in user to change their own password
 router.route("/change-password").put(protect, usersController.changePassword);
 
+// update password for any authenticated user
+router.route("/update-password").put(protect, usersController.updatePassword);
+
 // These routes for managing individual users remain admin-only.
 router
   .route("/:id")
