@@ -33,8 +33,8 @@ export interface HwaliItem {
   assigned_driver_id?: string;
 }
 
-// Represents a pickup request from the 'pickup_requests' table
-export interface PickupRequest {
+// Represents a request from the 'requests' table
+export interface Request {
   id: string;
   store_id: string;
   status: "requested" | "scheduled" | "picked_up" | "cancelled";

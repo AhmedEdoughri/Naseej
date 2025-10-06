@@ -4,7 +4,7 @@ const cors = require("cors");
 // Import your route files
 const authRoutes = require("./src/routes/authRoutes");
 const storesRoutes = require("./src/routes/storesRoutes");
-const pickupsRoutes = require("./src/routes/pickupsRoutes");
+const requestsRoutes = require("./src/routes/requestsRoutes");
 const itemsRoutes = require("./src/routes/itemsRoutes");
 const usersRoutes = require("./src/routes/usersRoutes");
 const statusRoutes = require("./src/routes/statusRoutes");
@@ -21,7 +21,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/stores", storesRoutes);
-app.use("/api/pickups", pickupsRoutes);
+app.use("/api/requests", requestsRoutes);
 app.use("/api/items", itemsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/statuses", statusRoutes);

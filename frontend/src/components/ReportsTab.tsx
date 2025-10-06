@@ -30,7 +30,6 @@ interface ReportData {
   storeName: string;
   requestedBy: string;
   requested_at: string;
-  pickup_date: string;
   status: string;
   itemCount: number;
 }
@@ -63,7 +62,7 @@ export const ReportsTab = () => {
         ...filters,
         storeId: filters.storeId === "all" ? "" : filters.storeId,
       };
-      const data = await api.getPickupRequestsReport(params);
+      const data = await api.getRequestsReport(params);
       setReportData(data);
     } catch (error) {
       console.error("Failed to fetch report data:", error);

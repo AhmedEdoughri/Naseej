@@ -13,22 +13,31 @@ exports.login = async (req, res) => {
 
   try {
     const isEmail = identifier.includes("@");
-    const queryField = isEmail ? "u.email" : "u.user_id";
-
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input("identifier", isEmail ? sql.VarChar : sql.Int, identifier).query(`
-        SELECT 
-          u.id, 
-          u.password_hash,
-          u.is_first_login,
-          u.status,
-          r.name as roleName
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        WHERE ${queryField} = @identifier
-      `);
+    const request = pool.request();
+
+    // 🔹 FIX: safely handle both email and numeric user_id
+    if (isEmail) {
+      request.input("identifier", sql.VarChar, identifier);
+    } else {
+      const numericId = Number(identifier);
+      if (isNaN(numericId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      request.input("identifier", sql.Int, numericId);
+    }
+
+    const result = await request.query(`
+      SELECT 
+        u.id, 
+        u.password_hash,
+        u.is_first_login,
+        u.status,
+        r.name AS roleName
+      FROM users u
+      JOIN roles r ON u.role_id = r.id
+      WHERE ${isEmail ? "u.email" : "u.user_id"} = @identifier
+    `);
 
     const user = result.recordset[0];
 
@@ -39,15 +48,12 @@ exports.login = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
-
     if (!isMatch) {
       return res.status(401).json({ message: "invalid_credentials" });
     }
 
     if (expectedRole && user.roleName !== expectedRole) {
-      return res.status(403).json({
-        message: "access_denied",
-      });
+      return res.status(403).json({ message: "access_denied" });
     }
 
     const token = jwt.sign(
@@ -55,6 +61,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
     res.status(200).json({
       token,
       role: user.roleName,
@@ -112,8 +119,9 @@ exports.registerStore = async (req, res) => {
       .input("password_hash", sql.Text, password_hash)
       .input("role_id", sql.Int, customerRoleId)
       .input("phone", sql.VarChar, phone)
+      .input("is_first_login", sql.Bit, 0)
       .query(
-        "INSERT INTO users (name, email, password_hash, role_id, phone, status) OUTPUT INSERTED.id, INSERTED.user_id VALUES (@name, @email, @password_hash, @role_id, @phone, 'pending')"
+        "INSERT INTO users (name, email, password_hash, role_id, phone, status, is_first_login) OUTPUT INSERTED.id, INSERTED.user_id VALUES (@name, @email, @password_hash, @role_id, @phone, 'pending', @is_first_login)"
       );
 
     const newUserId_guid = userResult.recordset[0].id; // The uniqueidentifier for linking
@@ -145,7 +153,6 @@ exports.registerStore = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-  console.log("Forgot password request for:", req.body.email);
   res.status(200).json({
     message:
       "If an account with that email exists, a password reset link has been sent.",

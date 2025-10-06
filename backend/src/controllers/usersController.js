@@ -232,6 +232,7 @@ exports.createCustomer = async (req, res) => {
       .input("password_hash", sql.Text, password_hash)
       .input("role_id", sql.Int, customerRoleId)
       .input("phone", sql.VarChar, phone)
+      .input("is_first_login", sql.Bit, 1)
       .query(
         "INSERT INTO users (name, email, password_hash, role_id, phone, status, is_first_login) OUTPUT INSERTED.id VALUES (@name, @email, @password_hash, @role_id, @phone, 'active', 1)"
       );
@@ -267,8 +268,6 @@ exports.changePassword = async (req, res) => {
   const { newPassword, confirmPassword } = req.body;
   const userId = req.user.userId;
 
-  console.log("Attempting to change password for user ID:", userId);
-
   if (newPassword !== confirmPassword) {
     return res.status(400).json({ message: "Passwords do not match." });
   }
@@ -294,11 +293,6 @@ exports.changePassword = async (req, res) => {
       .input("id", sql.UniqueIdentifier, userId)
       .query("SELECT is_first_login FROM users WHERE id = @id");
 
-    const updatedUser = result.recordset[0];
-    console.log(
-      "DIAGNOSTIC LOG: is_first_login in database is now:",
-      updatedUser.is_first_login
-    );
     res.status(200).json({ message: "Password updated successfully." });
   } catch (error) {
     console.error("CHANGE PASSWORD ERROR:", error);

@@ -4,11 +4,11 @@ const reportsController = require("../controllers/reportsController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 router
-  .route("/pickup-requests")
+  .route("/requests")
   .get(
     protect,
     authorize("admin", "manager"),
-    reportsController.getPickupRequestsReport
+    reportsController.getRequestsReport
   );
 
 module.exports = router;
