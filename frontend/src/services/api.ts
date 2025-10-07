@@ -220,6 +220,19 @@ export const api = {
     return fetchApi("/requests");
   },
 
+  cancelRequest: async (requestId: string) => {
+    return fetchApi(`/requests/${requestId}/cancel`, {
+      method: "PUT",
+    });
+  },
+
+  updateRequestNotes: async (requestId: string, notes: string) => {
+    return fetchApi(`/requests/${requestId}/notes`, {
+      method: "PUT",
+      body: JSON.stringify({ notes }),
+    });
+  },
+
   // -- login auth for firs time --
   changePassword: async (newPassword: string, confirmPassword: string) => {
     return fetchApi("/users/change-password", {

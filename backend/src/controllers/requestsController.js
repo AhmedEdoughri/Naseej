@@ -69,17 +69,73 @@ exports.createRequest = async (req, res) => {
   }
 };
 
+// @desc    Get requests
+// @route   GET /api/requests
 exports.getRequests = async (req, res) => {
   try {
     const pool = await poolPromise;
-    let query = "SELECT * FROM requests";
+    // --- MODIFICATION ---
+    // Start with a base query that excludes any cancelled requests.
+    let query = "SELECT * FROM requests WHERE status <> 'cancelled'";
 
     if (req.user.role === "customer") {
-      query += ` WHERE store_id = '${req.user.store_id}'`;
+      // Find the store_id for the customer
+      const storeResult = await pool
+        .request()
+        .input("user_id", sql.UniqueIdentifier, req.user.userId)
+        .query("SELECT id FROM stores WHERE user_id = @user_id");
+
+      if (storeResult.recordset.length > 0) {
+        const store_id = storeResult.recordset[0].id;
+        // Append the customer-specific condition
+        query += ` AND store_id = '${store_id}'`;
+      } else {
+        // No store found for this customer, so return no requests
+        return res.status(200).json([]);
+      }
     }
+
+    // Add the ordering at the very end
+    query += " ORDER BY deadline ASC";
 
     const result = await pool.request().query(query);
     res.status(200).json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Cancel a request
+// @route   PUT /api/requests/:id/cancel
+exports.cancelRequest = async (req, res) => {
+  const { id } = req.params;
+  const pool = await poolPromise;
+  try {
+    await pool
+      .request()
+      .input("requestId", sql.UniqueIdentifier, id)
+      .query("UPDATE requests SET status = 'cancelled' WHERE id = @requestId");
+
+    res.status(200).json({ message: "Request cancelled successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Update request notes
+// @route   PUT /api/requests/:id/notes
+exports.updateRequestNotes = async (req, res) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+  const pool = await poolPromise;
+  try {
+    await pool
+      .request()
+      .input("requestId", sql.UniqueIdentifier, id)
+      .input("notes", sql.Text, notes)
+      .query("UPDATE requests SET notes = @notes WHERE id = @requestId");
+
+    res.status(200).json({ message: "Notes updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
