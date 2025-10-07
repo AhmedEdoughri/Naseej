@@ -164,14 +164,9 @@ export const StatusBadge = ({ status }: { status: Status }) => {
           {config.label}
         </span>
 
-        {status === "working" && (
-          <div className="relative">
-            <Clock
-              size={12}
-              className={`${config.colors.text} animate-pulse`}
-            />
-          </div>
-        )}
+        <div className="relative">
+          <Clock size={12} className={`${config.colors.text} animate-pulse`} />
+        </div>
       </div>
     </div>
   );

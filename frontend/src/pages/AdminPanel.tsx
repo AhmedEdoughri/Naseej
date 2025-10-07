@@ -66,6 +66,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { SettingsTab } from "../components/SettingsTab";
 import { InfoCard } from "../components/InfoCard";
+import { EmptyState } from "@/components/EmptyState";
 
 // --- Type Definitions ---
 interface User {
@@ -635,8 +636,8 @@ const AdminPanel = () => {
     if (window.confirm(t("adminPanel.confirmations.deleteStore"))) {
       try {
         await api.deleteStore(storeId);
-        fetchData();
         toast.success(t("adminPanel.toasts.storeDeletedSuccess"));
+        fetchData();
       } catch (err: any) {
         toast.error(t("adminPanel.toasts.deleteStoreError"), {
           description: err.message,
@@ -1189,48 +1190,56 @@ const AdminPanel = () => {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="all" className="p-4 md:p-6">
-                  {userView === "card" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {sortCards(filteredUsers).map((user, index) => (
-                        <InfoCard
-                          key={user.id}
-                          item={user}
-                          type="user"
-                          delay={index * 50}
-                          onEdit={() => {
-                            setEditingUser(user);
-                            setIsUserDialogOpen(true);
-                          }}
-                          onDelete={() => handleDeleteUser(user.id)}
-                        />
-                      ))}
-                    </div>
+                  {filteredUsers.length > 0 ? (
+                    userView === "card" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {sortCards(filteredUsers).map((user, index) => (
+                          <InfoCard
+                            key={user.id}
+                            item={user}
+                            type="user"
+                            delay={index * 50}
+                            onEdit={() => {
+                              setEditingUser(user);
+                              setIsUserDialogOpen(true);
+                            }}
+                            onDelete={() => handleDeleteUser(user.id)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      renderUserTable(filteredUsers)
+                    )
                   ) : (
-                    renderUserTable(filteredUsers)
+                    <EmptyState message="No users found." />
                   )}
                 </TabsContent>
 
                 <TabsContent value="pending" className="p-4 md:p-6">
-                  {userView === "card" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {sortCards(pendingUsers).map((user, index) => (
-                        <InfoCard
-                          key={user.id}
-                          item={user}
-                          type="user"
-                          delay={index * 50}
-                          onEdit={() => {
-                            setEditingUser(user);
-                            setIsUserDialogOpen(true);
-                          }}
-                          onDelete={() => handleDeleteUser(user.id)}
-                          onApprove={() => handleApproveUser(user.id)}
-                          onDeny={() => handleDenyRegistration(user.id)}
-                        />
-                      ))}
-                    </div>
+                  {pendingUsers.length > 0 ? (
+                    userView === "card" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {sortCards(pendingUsers).map((user, index) => (
+                          <InfoCard
+                            key={user.id}
+                            item={user}
+                            type="user"
+                            delay={index * 50}
+                            onEdit={() => {
+                              setEditingUser(user);
+                              setIsUserDialogOpen(true);
+                            }}
+                            onDelete={() => handleDeleteUser(user.id)}
+                            onApprove={() => handleApproveUser(user.id)}
+                            onDeny={() => handleDenyRegistration(user.id)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      renderUserTable(processedPendingUsers)
+                    )
                   ) : (
-                    renderUserTable(processedPendingUsers)
+                    <EmptyState message="No pending user requests." />
                   )}
                 </TabsContent>
               </Tabs>
@@ -1318,125 +1327,133 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {customerView === "card" ? (
-                // --- CARD VIEW ---
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 md:p-6">
-                  {filteredCustomers.map((customer, index) => (
-                    <InfoCard
-                      key={customer.store_id}
-                      item={customer}
-                      type="customer"
-                      delay={index * 50}
-                      onEdit={() => {
-                        const formCompatibleStore: StoreFormData = {
-                          id: customer.store_id,
-                          name: customer.contact_name,
-                          phone: customer.contact_phone,
-                          storeName: customer.storeName,
-                          address: customer.address,
-                          city: customer.city,
-                          notes: customer.storeNotes,
-                        };
-                        setEditingStore(formCompatibleStore);
-                        setIsStoreDialogOpen(true);
-                      }}
-                      onDelete={() => handleDeleteUser(customer.store_id)}
-                    />
-                  ))}
-                </div>
+              {filteredCustomers.length > 0 ? (
+                customerView === "card" ? (
+                  // --- CARD VIEW ---
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 md:p-6">
+                    {filteredCustomers.map((customer, index) => (
+                      <InfoCard
+                        key={customer.store_id}
+                        item={customer}
+                        type="customer"
+                        delay={index * 50}
+                        onEdit={() => {
+                          const formCompatibleStore: StoreFormData = {
+                            id: customer.store_id,
+                            name: customer.contact_name,
+                            phone: customer.contact_phone,
+                            storeName: customer.storeName,
+                            address: customer.address,
+                            city: customer.city,
+                            notes: customer.storeNotes,
+                          };
+                          setEditingStore(formCompatibleStore);
+                          setIsStoreDialogOpen(true);
+                        }}
+                        onDelete={() => handleDeleteUser(customer.store_id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  // --- TABLE VIEW ---
+                  <div className="overflow-hidden rounded-xl border p-4 md:p-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50">
+                          <TableHead className="text-center">
+                            Store Name
+                          </TableHead>
+                          <TableHead className="text-center">
+                            Contact Name
+                          </TableHead>
+                          <TableHead className="text-center">User ID</TableHead>
+                          <TableHead className="text-center">Phone</TableHead>
+                          <TableHead className="text-center">Address</TableHead>
+                          <TableHead className="text-center">City</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-center">Notes</TableHead>
+                          <TableHead className="text-center">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCustomers.map((store, index) => (
+                          <AnimatedTableRow
+                            key={store.store_id}
+                            delay={index * 100}
+                          >
+                            <TableCell className="text-center font-medium">
+                              {store.storeName}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {store.contact_name}
+                            </TableCell>
+                            <TableCell className="text-center text-sm text-gray-500 dark:text-gray-400">
+                              {store.user_id}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {store.contact_phone}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {store.address}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {store.city}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span
+                                className={`capitalize px-3 py-1 text-xs font-semibold rounded-full ${
+                                  store.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 animate-pulse"
+                                    : store.status === "Deactivated"
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                                    : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                                }`}
+                              >
+                                {t(
+                                  `adminPanel.statuses.${store.status?.toLowerCase()}`,
+                                  { defaultValue: store.status }
+                                )}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {store.storeNotes}
+                            </TableCell>
+                            <TableCell className="text-center space-x-2">
+                              <AnimatedActionButton
+                                onClick={() => {
+                                  const formCompatibleStore: StoreFormData = {
+                                    id: store.store_id,
+                                    name: store.contact_name,
+                                    phone: store.contact_phone,
+                                    storeName: store.storeName,
+                                    address: store.address,
+                                    city: store.city,
+                                    notes: store.storeNotes,
+                                  };
+                                  setEditingStore(formCompatibleStore);
+                                  setIsStoreDialogOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </AnimatedActionButton>
+                              <AnimatedActionButton
+                                onClick={() =>
+                                  handleDeleteStore(store.store_id)
+                                }
+                                className="hover:bg-red-100"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </AnimatedActionButton>
+                            </TableCell>
+                          </AnimatedTableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )
               ) : (
-                // --- TABLE VIEW ---
-                <div className="overflow-hidden rounded-xl border p-4 md:p-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-amber-50 to-yellow-50">
-                        <TableHead className="text-center">
-                          Store Name
-                        </TableHead>
-                        <TableHead className="text-center">
-                          Contact Name
-                        </TableHead>
-                        <TableHead className="text-center">User ID</TableHead>
-                        <TableHead className="text-center">Phone</TableHead>
-                        <TableHead className="text-center">Address</TableHead>
-                        <TableHead className="text-center">City</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-center">Notes</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCustomers.map((store, index) => (
-                        <AnimatedTableRow
-                          key={store.store_id}
-                          delay={index * 100}
-                        >
-                          <TableCell className="text-center font-medium">
-                            {store.storeName}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {store.contact_name}
-                          </TableCell>
-                          <TableCell className="text-center text-sm text-gray-500 dark:text-gray-400">
-                            {store.user_id}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {store.contact_phone}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {store.address}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {store.city}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span
-                              className={`capitalize px-3 py-1 text-xs font-semibold rounded-full ${
-                                store.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 animate-pulse"
-                                  : store.status === "Deactivated"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                                  : "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                              }`}
-                            >
-                              {t(
-                                `adminPanel.statuses.${store.status?.toLowerCase()}`,
-                                { defaultValue: store.status }
-                              )}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {store.storeNotes}
-                          </TableCell>
-                          <TableCell className="text-center space-x-2">
-                            <AnimatedActionButton
-                              onClick={() => {
-                                const formCompatibleStore: StoreFormData = {
-                                  id: store.store_id,
-                                  name: store.contact_name,
-                                  phone: store.contact_phone,
-                                  storeName: store.storeName,
-                                  address: store.address,
-                                  city: store.city,
-                                  notes: store.storeNotes,
-                                };
-                                setEditingStore(formCompatibleStore);
-                                setIsStoreDialogOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </AnimatedActionButton>
-                            <AnimatedActionButton
-                              onClick={() => handleDeleteStore(store.store_id)}
-                              className="hover:bg-red-100"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </AnimatedActionButton>
-                          </TableCell>
-                        </AnimatedTableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="p-4 md:p-6">
+                  <EmptyState message="No customers found." />
                 </div>
               )}
             </div>

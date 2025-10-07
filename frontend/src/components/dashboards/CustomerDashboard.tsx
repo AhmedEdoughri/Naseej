@@ -5,13 +5,26 @@ import {
   AlertCircle,
   BarChart3,
   PlusCircle,
-  Calendar,
   Pencil,
   XCircle,
+  Search,
+  Filter,
+  X,
+  Calendar as CalendarIcon,
+  Minus, // <-- NEW ICON
+  Plus, // <-- NEW ICON
 } from "lucide-react";
 import { format } from "date-fns";
 
 // UI Components
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Slider } from "@/components/ui/slider";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +52,9 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 import { EnhancedMetricCard } from "@/components/EnhancedMetricCard";
 import { NewOrderForm } from "../NewOrderForm";
 import { api } from "@/services/api";
+import { EmptyState } from "@/components/EmptyState";
 
+// AnimatedRequestCard component remains the same
 const AnimatedRequestCard = ({
   request,
   onClick,
@@ -77,13 +92,13 @@ const AnimatedRequestCard = ({
           </div>
           <div>
             <p className="font-semibold text-gray-800 dark:text-gray-200 break-all">
-              Order #{request.id}
+              Order #{request.order_number}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {request.total_qty} items
             </p>
             <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <Calendar size={14} className="mr-1" />
+              <CalendarIcon size={14} className="mr-1" />
               <span>Due: {format(new Date(request.deadline), "PPP")}</span>
             </div>
           </div>
@@ -105,7 +120,6 @@ const AnimatedRequestCard = ({
                 className="relative text-amber-600 dark:text-amber-400 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors"
               />
             </button>
-
             {request.status === "requested" && (
               <button
                 onClick={(e) => {
@@ -131,6 +145,7 @@ const AnimatedRequestCard = ({
 
 export const CustomerDashboard = () => {
   const { t } = useTranslation();
+  // ... (all existing state remains the same)
   const [requests, setRequests] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -138,7 +153,19 @@ export const CustomerDashboard = () => {
   const [editingRequest, setEditingRequest] = useState<any | null>(null);
   const [editedNotes, setEditedNotes] = useState("");
   const [requestToCancel, setRequestToCancel] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState<Date | undefined>();
+  const [filterQuantity, setFilterQuantity] = useState<number[]>([0, 500]);
+  const maxQuantity = useMemo(() => {
+    if (requests.length === 0) return 500;
+    const max = Math.max(...requests.map((r) => r.total_qty));
+    return max > 500 ? max : 500;
+  }, [requests]);
+  useEffect(() => {
+    setFilterQuantity([0, maxQuantity]);
+  }, [maxQuantity]);
 
+  // ... (all existing functions like fetchRequests, etc. remain the same)
   const fetchRequests = async () => {
     try {
       const data = await api.getRequests();
@@ -152,26 +179,44 @@ export const CustomerDashboard = () => {
       console.error("Failed to fetch requests:", error);
     }
   };
-
   useEffect(() => {
     fetchRequests();
   }, [isFormOpen]);
-
-  const handleCancelRequest = async (id: string) => {
-    try {
-      await api.cancelRequest(id);
-      fetchRequests(); // Refresh the list
-    } catch (error) {
-      console.error("Failed to cancel request:", error);
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const searchTermMatch =
+        searchTerm === "" || String(request.order_number).includes(searchTerm);
+      const dateMatch =
+        !filterDate ||
+        new Date(request.deadline).toDateString() === filterDate.toDateString();
+      const quantityMatch =
+        request.total_qty >= filterQuantity[0] &&
+        request.total_qty <= filterQuantity[1];
+      return searchTermMatch && dateMatch && quantityMatch;
+    });
+  }, [requests, searchTerm, filterDate, filterQuantity]);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterDate(undefined);
+    setFilterQuantity([0, maxQuantity]);
+  };
+  const confirmCancelRequest = async () => {
+    if (requestToCancel) {
+      try {
+        await api.cancelRequest(requestToCancel);
+        fetchRequests();
+      } catch (error) {
+        console.error("Failed to cancel request:", error);
+      } finally {
+        setRequestToCancel(null);
+      }
     }
   };
-
   const handleEditNotes = (request: any) => {
     setEditingRequest(request);
     setEditedNotes(request.notes || "");
     setIsEditNotesOpen(true);
   };
-
   const handleUpdateNotes = async () => {
     if (!editingRequest) return;
     try {
@@ -183,9 +228,7 @@ export const CustomerDashboard = () => {
       console.error("Failed to update notes:", error);
     }
   };
-
   const selectedRequest = requests.find((req) => req.id === selectedItem);
-
   const { activeRequests, itemsInProcess, completedThisMonth } = useMemo(() => {
     const active = requests.filter(
       (r) => r.status !== "completed" && r.status !== "cancelled"
@@ -205,7 +248,7 @@ export const CustomerDashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* Page Header, Order Button, Metric Cards remain the same */}
+      {/* ... (Header and Metric Cards remain the same) ... */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
@@ -264,24 +307,184 @@ export const CustomerDashboard = () => {
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
         <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-amber-200 dark:border-gray-800">
-          <h3 className="font-bold text-xl mb-6 text-gray-800 dark:text-gray-200">
+          <h3 className="font-bold text-xl mb-4 text-gray-800 dark:text-gray-200">
             {t("recentRequests")}
           </h3>
-          <div className="space-y-4">
-            {requests.map((request, index) => (
-              <AnimatedRequestCard
-                key={request.id}
-                request={request}
-                onClick={() => setSelectedItem(request.id)}
-                isSelected={selectedItem === request.id}
-                delay={index * 150}
-                onCancel={() => setRequestToCancel(request.id)}
-                onEditNotes={handleEditNotes}
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="Search by Order #..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
-            ))}
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto border-amber-300 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                >
+                  <Filter className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  Filters
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Filter Orders</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Adjust the filters to find specific orders.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Due Date</label>
+                    <Calendar
+                      mode="single"
+                      selected={filterDate}
+                      onSelect={setFilterDate}
+                      className="rounded-md border border-amber-200 dark:border-gray-700"
+                      classNames={{
+                        day_selected:
+                          "bg-amber-500 text-white hover:bg-amber-600 focus:bg-amber-600",
+                        day_today:
+                          "bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200",
+                      }}
+                    />
+                  </div>
+
+                  {/* --- NEW: ENHANCED QUANTITY FILTER --- */}
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">
+                      Quantity Range
+                    </label>
+                    <Slider
+                      min={0}
+                      max={maxQuantity}
+                      step={1}
+                      value={filterQuantity}
+                      onValueChange={setFilterQuantity}
+                      className="[&>span:first-child]:bg-amber-500"
+                    />
+                    <div className="flex justify-between items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            setFilterQuantity([
+                              Math.max(0, filterQuantity[0] - 1),
+                              filterQuantity[1],
+                            ])
+                          }
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={filterQuantity[0]}
+                          onChange={(e) =>
+                            setFilterQuantity([
+                              Number(e.target.value),
+                              filterQuantity[1],
+                            ])
+                          }
+                          className="w-20 h-8 text-center"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            setFilterQuantity([
+                              filterQuantity[0] + 1,
+                              filterQuantity[1],
+                            ])
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <span className="text-gray-400">-</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            setFilterQuantity([
+                              filterQuantity[0],
+                              Math.max(0, filterQuantity[1] - 1),
+                            ])
+                          }
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={filterQuantity[1]}
+                          onChange={(e) =>
+                            setFilterQuantity([
+                              filterQuantity[0],
+                              Number(e.target.value),
+                            ])
+                          }
+                          className="w-20 h-8 text-center"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            setFilterQuantity([
+                              filterQuantity[0],
+                              filterQuantity[1] + 1,
+                            ])
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* --- NEW: STYLED CLEAR FILTER BUTTON --- */}
+                  <Button
+                    onClick={clearFilters}
+                    className={cn(
+                      "w-full font-semibold text-white transition-all duration-300",
+                      "bg-gradient-to-r from-amber-500 to-yellow-500",
+                      "hover:from-amber-600 hover:to-yellow-600 hover:scale-105"
+                    )}
+                  >
+                    <X className="mr-2 h-4 w-4" /> Clear All Filters
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-4">
+            {filteredRequests.length > 0 ? (
+              filteredRequests.map((request, index) => (
+                <AnimatedRequestCard
+                  key={request.id}
+                  request={request}
+                  onClick={() => setSelectedItem(request.id)}
+                  isSelected={selectedItem === request.id}
+                  delay={index * 150}
+                  onCancel={() => setRequestToCancel(request.id)}
+                  onEditNotes={handleEditNotes}
+                />
+              ))
+            ) : (
+              <EmptyState message="No orders match your filters." />
+            )}
           </div>
         </div>
 
@@ -290,17 +493,18 @@ export const CustomerDashboard = () => {
             <StatusTimeline
               currentStatus={selectedRequest.status as any}
               itemId={selectedItem}
+              orderNumber={selectedRequest.order_number}
             />
           </div>
         )}
       </div>
 
-      {/* Edit Notes Dialog */}
+      {/* ... Dialogs ... */}
       <Dialog open={isEditNotesOpen} onOpenChange={setIsEditNotesOpen}>
         <DialogContent className="sm:max-w-[650px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
           <DialogHeader>
             <DialogTitle className="text-gray-800 dark:text-gray-200">
-              Edit Notes for Order #{editingRequest?.id}
+              Edit Notes for Order #{editingRequest?.order_number}
             </DialogTitle>
           </DialogHeader>
           <Textarea
@@ -322,8 +526,6 @@ export const CustomerDashboard = () => {
           </Button>
         </DialogContent>
       </Dialog>
-
-      {/* Cancel Confirmation Dialog */}
       <AlertDialog
         open={!!requestToCancel}
         onOpenChange={() => setRequestToCancel(null)}
@@ -364,11 +566,7 @@ export const CustomerDashboard = () => {
             </AlertDialogCancel>
             <AlertDialogAction
               className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
-              onClick={() => {
-                if (requestToCancel) {
-                  handleCancelRequest(requestToCancel);
-                }
-              }}
+              onClick={confirmCancelRequest}
             >
               <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <span className="relative">Yes, Cancel Request</span>

@@ -23,9 +23,11 @@ type Status =
 export const StatusTimeline = ({
   currentStatus,
   itemId,
+  orderNumber,
 }: {
   currentStatus: Status;
   itemId: string;
+  orderNumber: number;
 }) => {
   const { t } = useTranslation();
 
@@ -60,8 +62,9 @@ export const StatusTimeline = ({
               {t("orderStatus")}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 font-medium break-all mt-1">
-              <span className="text-amber-600 dark:text-amber-400">#</span>
-              {itemId}
+              Order{" "}
+              <span className="text-amber-600 dark:text-amber-400">#ORD-</span>
+              {orderNumber}
             </p>
           </div>
         </div>
