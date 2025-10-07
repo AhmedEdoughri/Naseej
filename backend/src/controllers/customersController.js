@@ -57,15 +57,20 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-// @desc    Delete a customer
-// @route   DELETE /api/customers/:id
+// @desc    Delete a store and its associated user
+// @route   DELETE /api/stores/:id
 exports.deleteCustomer = async (req, res) => {
   try {
     const pool = await poolPromise;
+
     await pool
+
       .request()
+
       .input("id", sql.UniqueIdentifier, req.params.id)
+
       .query("DELETE FROM customers WHERE id = @id");
+
     res.status(200).json({ message: "Customer deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

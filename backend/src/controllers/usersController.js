@@ -112,21 +112,46 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// @desc    Delete a user (for the admin panel)
+// @desc    Delete a user
 // @route   DELETE /api/users/:id
-// @access  Admin only
 exports.deleteUser = async (req, res) => {
-  try {
-    const pool = await poolPromise;
-    await pool
-      .request()
-      .input("id", sql.UniqueIdentifier, req.params.id)
-      .query("DELETE FROM users WHERE id = @id");
+  const { id } = req.params;
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
 
-    res.status(200).json({ message: "User deleted successfully" });
+  try {
+    await transaction.begin();
+    const request = new sql.Request(transaction);
+
+    // 1. Check if the user is a customer and has a store
+    const storeResult = await request
+      .input("user_id", sql.UniqueIdentifier, id)
+      .query("SELECT id FROM stores WHERE user_id = @user_id");
+
+    // 2. If a store exists, delete it first
+    if (storeResult.recordset.length > 0) {
+      const storeId = storeResult.recordset[0].id;
+      await new sql.Request(transaction)
+        .input("store_id", sql.UniqueIdentifier, storeId)
+        .query("DELETE FROM stores WHERE id = @store_id");
+    }
+
+    // 3. Now it's safe to delete the user
+    await new sql.Request(transaction)
+      .input("user_id", sql.UniqueIdentifier, id)
+      .query("DELETE FROM users WHERE id = @user_id");
+
+    // 4. If everything was successful, commit the transaction
+    await transaction.commit();
+
+    res
+      .status(200)
+      .json({ message: "User and associated store deleted successfully" });
   } catch (error) {
-    console.error("DELETE USER ERROR:", error);
-    res.status(500).json({ message: "Server Error" });
+    // If anything fails, roll back all changes
+    await transaction.rollback();
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -320,11 +345,9 @@ exports.updatePassword = async (req, res) => {
   }
 
   if (newPassword === currentPassword) {
-    return res
-      .status(400)
-      .json({
-        message: "New password cannot be the same as the current password.",
-      });
+    return res.status(400).json({
+      message: "New password cannot be the same as the current password.",
+    });
   }
 
   try {

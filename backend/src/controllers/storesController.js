@@ -132,9 +132,16 @@ exports.deleteStore = async (req, res) => {
         ? storeResult.recordset[0].user_id
         : null;
 
-    await new sql.Request(transaction)
+    const deleteResult = await new sql.Request(transaction)
       .input("id", sql.UniqueIdentifier, req.params.id)
       .query("DELETE FROM stores WHERE id = @id");
+
+    if (deleteResult.rowsAffected[0] === 0) {
+      await transaction.rollback();
+      return res
+        .status(404)
+        .json({ message: "Store not found or already deleted" });
+    }
 
     if (userId) {
       await new sql.Request(transaction)
