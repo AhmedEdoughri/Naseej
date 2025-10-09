@@ -1,79 +1,54 @@
 const { poolPromise, sql } = require("../config/db");
 
-// @desc    Create a request
-
-// @route   POST /api/requests
-
+// @desc    Create a request
+// @route   POST /api/requests
 exports.createRequest = async (req, res) => {
   const { items, notes, total_qty, deadline, inbound_option, outbound_option } =
     req.body;
 
   const requested_by_user_id = req.user.userId;
-
   const pool = await poolPromise;
-
   const transaction = new sql.Transaction(pool);
 
   try {
     await transaction.begin(); // --- 1. Find the store linked to this user ---
 
     const storeResult = await new sql.Request(transaction)
-
       .input("user_id", sql.UniqueIdentifier, requested_by_user_id)
-
       .query("SELECT id FROM stores WHERE user_id = @user_id");
 
     if (!storeResult.recordset[0]) {
       await transaction.rollback();
-
       return res.status(400).json({ message: "No store found for this user" });
     }
 
     const store_id = storeResult.recordset[0].id; // --- 2. Insert request and set initial status to 'Pending Approval' ---
 
     const requestResult = await new sql.Request(transaction)
-
       .input("store_id", sql.UniqueIdentifier, store_id)
-
       .input("requested_by_user_id", sql.UniqueIdentifier, requested_by_user_id)
-
       .input("notes", sql.Text, notes)
-
       .input("total_qty", sql.Int, total_qty)
-
       .input("deadline", sql.Date, deadline)
-
       .input("inbound_option", sql.VarChar, inbound_option)
-
       .input("outbound_option", sql.VarChar, outbound_option)
-
       .input("status", sql.VarChar, "Pending Approval") // Set the initial status here
       .query(`
-
-        INSERT INTO requests
-
-          (store_id, requested_by_user_id, notes, total_qty, deadline, inbound_option, outbound_option, status)
-
-        OUTPUT INSERTED.id
-
-        VALUES
-
-          (@store_id, @requested_by_user_id, @notes, @total_qty, @deadline, @inbound_option, @outbound_option, @status)
-
-      `);
+        INSERT INTO requests
+          (store_id, requested_by_user_id, notes, total_qty, deadline, inbound_option, outbound_option, status)
+        OUTPUT INSERTED.id
+        VALUES
+          (@store_id, @requested_by_user_id, @notes, @total_qty, @deadline, @inbound_option, @outbound_option, @status)
+      `);
 
     const requestId = requestResult.recordset[0].id; // --- 3. Insert items if provided ---
 
     if (items && items.length > 0) {
       for (const item of items) {
         await new sql.Request(transaction)
-
           .input("request_id", sql.UniqueIdentifier, requestId)
-
           .input("qty", sql.Int, item.qty)
-
           .input("description", sql.Text, item.description)
-
           .query(
             "INSERT INTO hwali_items (request_id, qty, description) VALUES (@request_id, @qty, @description)"
           );
@@ -84,53 +59,41 @@ exports.createRequest = async (req, res) => {
 
     res.status(201).json({
       message: "Request created successfully",
-
       request_id: requestId,
     });
   } catch (error) {
     await transaction.rollback();
-
     console.error("Error creating request:", error);
-
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// @desc    Get requests
-
-// @route   GET /api/requests
-
+// @desc    Get requests
+// @route   GET /api/requests
 exports.getRequests = async (req, res) => {
   try {
     const pool = await poolPromise;
-
     let query = "SELECT * FROM requests"; // Start with the base query
-
     const whereClauses = []; // Always exclude cancelled, unless you're an admin who wants to see them
 
     if (req.user.role !== "admin") {
-      whereClauses.push("status <> 'cancelled'");
+      whereClauses.push("status <> 'Cancelled'");
     }
 
     if (req.user.role === "customer") {
       const storeResult = await pool
-
         .request()
-
         .input("user_id", sql.UniqueIdentifier, req.user.userId)
-
         .query("SELECT id FROM stores WHERE user_id = @user_id");
 
       if (storeResult.recordset.length > 0) {
         const store_id = storeResult.recordset[0].id;
-
         whereClauses.push(`store_id = '${store_id}'`);
       } else {
         return res.status(200).json([]);
       }
     } else if (req.user.role === "manager") {
       // Managers should see requests pending their approval
-
       whereClauses.push("status = 'Pending Approval'");
     }
 
@@ -141,20 +104,16 @@ exports.getRequests = async (req, res) => {
     query += " ORDER BY deadline ASC";
 
     const result = await pool.request().query(query);
-
     res.status(200).json(result.recordset);
   } catch (error) {
     console.error("Error in getRequests:", error);
-
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 // --- NEW FUNCTIONS FOR APPROVAL ---
-
 const updateRequestStatus = async (res, requestId, newStatus) => {
   const pool = await poolPromise;
-
   try {
     // Fetch request details first
     const requestResult = await pool
@@ -170,8 +129,6 @@ const updateRequestStatus = async (res, requestId, newStatus) => {
     }
 
     const { inbound_option, outbound_option } = requestResult.recordset[0];
-
-    // Start with the requested status
     let finalStatus = newStatus;
 
     // --- Automatic transitions ---
@@ -179,14 +136,12 @@ const updateRequestStatus = async (res, requestId, newStatus) => {
       if (inbound_option === "customer_dropoff") {
         finalStatus = "Awaiting Drop-off"; // auto move to drop-off
       }
-      // If it's business pickup, manager will later trigger manually
     }
 
     if (newStatus === "Preparing Order") {
       if (outbound_option === "customer_pickup") {
         finalStatus = "Ready for Pickup"; // auto move to ready
       }
-      // If it's delivery, manager triggers manually
     }
 
     // Update status in DB
@@ -217,29 +172,81 @@ exports.rejectRequest = (req, res) => {
 // ------------------------------------
 
 exports.cancelRequest = (req, res) => {
-  updateRequestStatus(res, req.params.id, "cancelled");
+  updateRequestStatus(res, req.params.id, "Cancelled");
 };
 
 exports.updateRequestNotes = async (req, res) => {
   const { id } = req.params;
-
   const { notes } = req.body;
-
   const pool = await poolPromise;
 
   try {
     await pool
-
       .request()
-
       .input("requestId", sql.UniqueIdentifier, id)
-
       .input("notes", sql.Text, notes)
-
       .query("UPDATE requests SET notes = @notes WHERE id = @requestId");
-
     res.status(200).json({ message: "Notes updated successfully" });
   } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get order history for users based on their role
+ * @route   GET /api/requests/history
+ * @access  Private (Customer, Manager, Admin)
+ */
+exports.getOrderHistory = async (req, res) => {
+  const { status, search } = req.query;
+  const { userId, role } = req.user;
+
+  try {
+    const pool = await poolPromise;
+    const request = pool.request();
+    let query = "SELECT * FROM requests";
+    const whereClauses = [];
+
+    // ROLE-BASED LOGIC
+    if (role === "customer") {
+      const storeResult = await pool
+        .request()
+        .input("user_id", sql.UniqueIdentifier, userId)
+        .query("SELECT id FROM stores WHERE user_id = @user_id");
+
+      if (storeResult.recordset.length === 0) {
+        return res.status(200).json([]);
+      }
+      const store_id = storeResult.recordset[0].id;
+      whereClauses.push("store_id = @store_id");
+      request.input("store_id", sql.UniqueIdentifier, store_id);
+    }
+
+    // STATUS FILTERING
+    if (status) {
+      // Exact match, case-insensitive
+      whereClauses.push("LOWER(status) = LOWER(@status)");
+      request.input("status", sql.VarChar, status.trim());
+    }
+
+    // SEARCH FILTERING
+    if (search) {
+      whereClauses.push(
+        "(CAST(order_number AS VARCHAR(50)) LIKE @search OR CAST(id AS VARCHAR(36)) LIKE @search)"
+      );
+      request.input("search", sql.VarChar, `%${search}%`);
+    }
+
+    if (whereClauses.length > 0) {
+      query += " WHERE " + whereClauses.join(" AND ");
+    }
+
+    query += " ORDER BY deadline DESC";
+
+    const result = await request.query(query);
+    res.status(200).json(result.recordset);
+  } catch (error) {
+    console.error("Error fetching order history:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

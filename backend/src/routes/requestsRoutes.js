@@ -10,6 +10,7 @@ const {
   updateRequestNotes,
   approveRequest,
   rejectRequest,
+  getOrderHistory,
 } = require("../controllers/requestsController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -50,5 +51,15 @@ router
   .put(protect, authorize("admin", "manager"), (req, res) =>
     updateRequestStatus(res, req.params.id, "Out for Delivery")
   );
+
+// @desc    Get order history for users
+// @route   GET /api/requests/history
+// @access  Private (Customer, Manager, Admin)
+router.get(
+  "/history",
+  protect,
+  authorize("customer", "manager", "admin"),
+  getOrderHistory
+);
 
 module.exports = router;
