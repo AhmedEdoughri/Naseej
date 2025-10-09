@@ -27,7 +27,8 @@ type Status =
   | "Preparing Order"
   | "Ready for Pickup"
   | "Out for Delivery"
-  | "Order Fulfilled";
+  | "Order Fulfilled"
+  | "Cancelled";
 
 type Step = {
   status: Status;

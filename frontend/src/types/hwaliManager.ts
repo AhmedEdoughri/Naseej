@@ -37,6 +37,18 @@ export interface HwaliItem {
 export interface Request {
   id: string;
   store_id: string;
-  status: "requested" | "scheduled" | "picked_up" | "cancelled";
+  status:
+    | "Order Placed"
+    | "Pending Approval"
+    | "Approved"
+    | "Rejected"
+    | "Awaiting Drop-off"
+    | "Driver Dispatched"
+    | "In Process"
+    | "Preparing Order"
+    | "Ready for Pickup"
+    | "Out for Delivery"
+    | "Order Fulfilled"
+    | "Cancelled";
   notes?: string;
 }
