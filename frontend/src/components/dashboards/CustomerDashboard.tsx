@@ -32,6 +32,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -54,7 +56,7 @@ import { NewOrderForm } from "../NewOrderForm";
 import { api } from "@/services/api";
 import { EmptyState } from "@/components/EmptyState";
 
-// AnimatedRequestCard component remains the same
+// AnimatedRequestCard component
 const AnimatedRequestCard = ({
   request,
   onClick,
@@ -70,15 +72,15 @@ const AnimatedRequestCard = ({
   onCancel: (id: string) => void;
   onEditNotes: (request: any) => void;
 }) => {
+  const deadlineDate = new Date(request.deadline);
+  const correctedDate = new Date(
+    deadlineDate.getTime() + deadlineDate.getTimezoneOffset() * 60000
+  );
   return (
     <div
       onClick={onClick}
       className={cn(
-        `
-        p-4 cursor-pointer
-        bg-gradient-to-r from-white to-amber-50 dark:from-gray-800/50 dark:to-gray-800/20
-        rounded-xl border
-        transition-all duration-300 hover:scale-102 hover:shadow-lg`,
+        `p-4 cursor-pointer bg-gradient-to-r from-white to-amber-50 dark:from-gray-800/50 dark:to-gray-800/20 rounded-xl border transition-all duration-300 hover:scale-102 hover:shadow-lg`,
         isSelected
           ? "border-amber-500 shadow-md"
           : "border-amber-200 dark:border-gray-700"
@@ -99,7 +101,7 @@ const AnimatedRequestCard = ({
             </p>
             <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
               <CalendarIcon size={14} className="mr-1" />
-              <span>Due: {format(new Date(request.deadline), "PPP")}</span>
+              <span>Due: {format(correctedDate, "PPP")}</span>
             </div>
           </div>
         </div>
@@ -114,13 +116,14 @@ const AnimatedRequestCard = ({
               className="group relative p-2.5 bg-gradient-to-br from-amber-100 to-yellow-100 hover:from-amber-200 hover:to-yellow-200 dark:from-amber-900/30 dark:to-yellow-900/30 dark:hover:from-amber-800/40 dark:hover:to-yellow-800/40 rounded-lg border-2 border-amber-300 dark:border-amber-700/50 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 overflow-hidden"
               title="Edit Notes"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-amber-200/0 via-yellow-200/40 to-amber-200/0 dark:from-amber-600/0 dark:via-amber-500/20 dark:to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <Pencil
                 size={18}
-                className="relative text-amber-600 dark:text-amber-400 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors"
+                className="relative text-amber-600 dark:text-amber-400"
               />
             </button>
-            {request.status === "requested" && (
+            {/* --- MODIFICATION: Updated cancel condition --- */}
+            {(request.status === "Order Placed" ||
+              request.status === "Pending Approval") && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -129,10 +132,9 @@ const AnimatedRequestCard = ({
                 className="group relative p-2.5 bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-300 dark:from-red-900/30 dark:to-red-800/30 dark:hover:from-red-800/40 dark:hover:to-red-700/40 rounded-lg border-2 border-red-300 dark:border-red-700/50 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 overflow-hidden"
                 title="Cancel Request"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-red-200/0 via-red-200/40 to-red-200/0 dark:from-red-600/0 dark:via-red-500/20 dark:to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <XCircle
                   size={18}
-                  className="relative text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors"
+                  className="relative text-red-600 dark:text-red-400"
                 />
               </button>
             )}
@@ -145,7 +147,6 @@ const AnimatedRequestCard = ({
 
 export const CustomerDashboard = () => {
   const { t } = useTranslation();
-  // ... (all existing state remains the same)
   const [requests, setRequests] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -156,32 +157,45 @@ export const CustomerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>();
   const [filterQuantity, setFilterQuantity] = useState<number[]>([0, 500]);
+
   const maxQuantity = useMemo(() => {
     if (requests.length === 0) return 500;
     const max = Math.max(...requests.map((r) => r.total_qty));
     return max > 500 ? max : 500;
   }, [requests]);
+
   useEffect(() => {
     setFilterQuantity([0, maxQuantity]);
   }, [maxQuantity]);
 
-  // ... (all existing functions like fetchRequests, etc. remain the same)
-  const fetchRequests = async () => {
+  // --- MODIFICATION: Updated fetchRequests function with sorting and selection logic ---
+  const fetchRequests = async (selectNewest = false) => {
     try {
       const data = await api.getRequests();
-      setRequests(data);
-      if (data.length > 0 && !selectedItem) {
-        setSelectedItem(data[0].id);
-      } else if (data.length === 0) {
+      const sortedData = data.sort(
+        (a: any, b: any) =>
+          new Date(b.requested_at).getTime() -
+          new Date(a.requested_at).getTime()
+      );
+      setRequests(sortedData);
+
+      if (selectNewest && sortedData.length > 0) {
+        setSelectedItem(sortedData[0].id);
+      } else if (sortedData.length > 0 && !selectedItem) {
+        setSelectedItem(sortedData[0].id);
+      } else if (sortedData.length === 0) {
         setSelectedItem(null);
       }
     } catch (error) {
       console.error("Failed to fetch requests:", error);
     }
   };
+
+  // This useEffect now only runs once on component mount
   useEffect(() => {
     fetchRequests();
-  }, [isFormOpen]);
+  }, []);
+
   const filteredRequests = useMemo(() => {
     return requests.filter((request) => {
       const searchTermMatch =
@@ -195,11 +209,13 @@ export const CustomerDashboard = () => {
       return searchTermMatch && dateMatch && quantityMatch;
     });
   }, [requests, searchTerm, filterDate, filterQuantity]);
+
   const clearFilters = () => {
     setSearchTerm("");
     setFilterDate(undefined);
     setFilterQuantity([0, maxQuantity]);
   };
+
   const confirmCancelRequest = async () => {
     if (requestToCancel) {
       try {
@@ -212,11 +228,13 @@ export const CustomerDashboard = () => {
       }
     }
   };
+
   const handleEditNotes = (request: any) => {
     setEditingRequest(request);
     setEditedNotes(request.notes || "");
     setIsEditNotesOpen(true);
   };
+
   const handleUpdateNotes = async () => {
     if (!editingRequest) return;
     try {
@@ -228,14 +246,16 @@ export const CustomerDashboard = () => {
       console.error("Failed to update notes:", error);
     }
   };
+
   const selectedRequest = requests.find((req) => req.id === selectedItem);
+
   const { activeRequests, itemsInProcess, completedThisMonth } = useMemo(() => {
     const active = requests.filter(
-      (r) => r.status !== "completed" && r.status !== "cancelled"
+      (r) => r.status !== "Order Fulfilled" && r.status !== "cancelled"
     );
     const completed = requests.filter(
       (r) =>
-        r.status === "completed" &&
+        r.status === "Order Fulfilled" &&
         new Date(r.requested_at).getMonth() === new Date().getMonth()
     );
     const items = active.reduce((sum, r) => sum + r.total_qty, 0);
@@ -248,7 +268,6 @@ export const CustomerDashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* ... (Header and Metric Cards remain the same) ... */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
@@ -278,10 +297,17 @@ export const CustomerDashboard = () => {
                 {t("placeNewOrder")}
               </DialogTitle>
             </DialogHeader>
-            <NewOrderForm onSuccess={() => setIsFormOpen(false)} />
+            {/* --- MODIFICATION: onSuccess now refetches and selects the newest request --- */}
+            <NewOrderForm
+              onSuccess={() => {
+                setIsFormOpen(false);
+                fetchRequests(true);
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <EnhancedMetricCard
           title="Active Requests"
@@ -308,7 +334,7 @@ export const CustomerDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-amber-200 dark:border-gray-800">
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-amber-200 dark:border-gray-800 flex flex-col h-[900px]">
           <h3 className="font-bold text-xl mb-4 text-gray-800 dark:text-gray-200">
             {t("recentRequests")}
           </h3>
@@ -471,7 +497,7 @@ export const CustomerDashboard = () => {
             </Popover>
           </div>
 
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((request, index) => (
                 <AnimatedRequestCard
@@ -496,12 +522,14 @@ export const CustomerDashboard = () => {
               currentStatus={selectedRequest.status as any}
               itemId={selectedItem}
               orderNumber={selectedRequest.order_number}
+              inbound_option={selectedRequest.inbound_option}
+              outbound_option={selectedRequest.outbound_option}
             />
           </div>
         )}
       </div>
 
-      {/* ... Dialogs ... */}
+      {/* Dialogs */}
       <Dialog open={isEditNotesOpen} onOpenChange={setIsEditNotesOpen}>
         <DialogContent className="sm:max-w-[650px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
           <DialogHeader>
@@ -535,29 +563,11 @@ export const CustomerDashboard = () => {
         <AlertDialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white via-amber-50/20 to-yellow-50/10 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800/50 backdrop-blur-sm border-2 border-amber-300 dark:border-amber-700/50 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400 flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-white"
-                >
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                  <path d="M12 9v4" />
-                  <path d="M12 17h.01" />
-                </svg>
-              </div>
               Cancel Request?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base mt-3 bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500">
               This action cannot be undone. Your request will be permanently
-              cancelled and removed from the system.
+              cancelled.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-6">
@@ -567,10 +577,9 @@ export const CustomerDashboard = () => {
               </button>
             </AlertDialogCancel>
             <AlertDialogAction
-              className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
+              className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 to-red-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
               onClick={confirmCancelRequest}
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <span className="relative">Yes, Cancel Request</span>
             </AlertDialogAction>
           </AlertDialogFooter>
