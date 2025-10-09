@@ -22,6 +22,17 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+import {
   DndContext,
   closestCenter,
   PointerSensor,
@@ -57,6 +68,7 @@ import {
   Crown,
   LayoutGrid,
   List,
+  AlertTriangle,
 } from "lucide-react";
 import { StoreForm } from "../components/StoreForm";
 import { UserForm } from "../components/UserForm";
@@ -349,6 +361,7 @@ const AdminPanel = () => {
   const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [editingStatus, setEditingStatus] = useState<Status | null>(null);
+  const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
 
   // States for sorting and filtering
   const [searchTerm, setSearchTerm] = useState("");
@@ -508,7 +521,13 @@ const AdminPanel = () => {
     toast.info(t("adminPanel.toasts.changesDiscarded"));
   };
 
-  const handleLogout = () => {
+  // This function will be called by the button to open the dialog
+  const handleLogoutClick = () => {
+    setIsLogoutAlertOpen(true);
+  };
+
+  // This function performs the actual logout after confirmation
+  const confirmLogout = () => {
     localStorage.clear();
     navigate("/");
   };
@@ -947,7 +966,7 @@ const AdminPanel = () => {
 
               {/* For admin, you can keep it simple: Logout only */}
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutClick}
                 className="group relative px-5 py-2.5 bg-gradient-to-br from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.05] active:scale-95 border border-amber-400/30 overflow-hidden flex items-center justify-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
@@ -956,6 +975,40 @@ const AdminPanel = () => {
             </div>
           </div>
         </header>
+
+        <AlertDialog
+          open={isLogoutAlertOpen}
+          onOpenChange={setIsLogoutAlertOpen}
+        >
+          <AlertDialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white via-amber-50/20 to-yellow-50/10 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800/50 backdrop-blur-sm border-2 border-amber-300 dark:border-amber-700/50 shadow-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400 flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                  <AlertTriangle className="text-white h-6 w-6" />
+                </div>
+                Confirm Logout
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base mt-3 bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500">
+                Are you sure you want to end your session? You will be returned
+                to the main page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 mt-6">
+              <AlertDialogCancel asChild>
+                <button className="px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-800 dark:to-gray-700 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95">
+                  Go Back
+                </button>
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
+                onClick={confirmLogout}
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative">Yes, Log Out</span>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div
           dir="ltr"

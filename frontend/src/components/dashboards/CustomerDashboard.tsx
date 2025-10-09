@@ -11,8 +11,8 @@ import {
   Filter,
   X,
   Calendar as CalendarIcon,
-  Minus, // <-- NEW ICON
-  Plus, // <-- NEW ICON
+  Minus,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -333,7 +333,7 @@ export const CustomerDashboard = () => {
                   Filters
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
+              <PopoverContent className="w-fit bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium leading-none">Filter Orders</h4>
@@ -343,18 +343,20 @@ export const CustomerDashboard = () => {
                   </div>
                   <div className="grid gap-2">
                     <label className="text-sm font-medium">Due Date</label>
-                    <Calendar
-                      mode="single"
-                      selected={filterDate}
-                      onSelect={setFilterDate}
-                      className="rounded-md border border-amber-200 dark:border-gray-700"
-                      classNames={{
-                        day_selected:
-                          "bg-amber-500 text-white hover:bg-amber-600 focus:bg-amber-600",
-                        day_today:
-                          "bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200",
-                      }}
-                    />
+                    <div className="flex justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={filterDate}
+                        onSelect={setFilterDate}
+                        className="rounded-md border border-amber-200 dark:border-gray-700"
+                        classNames={{
+                          day_selected:
+                            "bg-amber-500 text-white hover:bg-amber-600 focus:bg-amber-600",
+                          day_today:
+                            "bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200",
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* --- NEW: ENHANCED QUANTITY FILTER --- */}
