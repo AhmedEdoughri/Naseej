@@ -13,8 +13,10 @@ import {
   Calendar as CalendarIcon,
   Minus,
   Plus,
+  History, // Import the History icon
 } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom"; // Import Link for navigation
 
 // UI Components
 import { Input } from "@/components/ui/input";
@@ -32,8 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -56,7 +56,7 @@ import { NewOrderForm } from "../NewOrderForm";
 import { api } from "@/services/api";
 import { EmptyState } from "@/components/EmptyState";
 
-// AnimatedRequestCard component
+// AnimatedRequestCard component (no changes needed here)
 const AnimatedRequestCard = ({
   request,
   onClick,
@@ -121,7 +121,6 @@ const AnimatedRequestCard = ({
                 className="relative text-amber-600 dark:text-amber-400"
               />
             </button>
-            {/* --- MODIFICATION: Updated cancel condition --- */}
             {(request.status === "Order Placed" ||
               request.status === "Pending Approval") && (
               <button
@@ -168,7 +167,6 @@ export const CustomerDashboard = () => {
     setFilterQuantity([0, maxQuantity]);
   }, [maxQuantity]);
 
-  // --- MODIFICATION: Updated fetchRequests function with sorting and selection logic ---
   const fetchRequests = async (selectNewest = false) => {
     try {
       const data = await api.getRequests();
@@ -191,7 +189,6 @@ export const CustomerDashboard = () => {
     }
   };
 
-  // This useEffect now only runs once on component mount
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -251,7 +248,7 @@ export const CustomerDashboard = () => {
 
   const { activeRequests, itemsInProcess, completedThisMonth } = useMemo(() => {
     const active = requests.filter(
-      (r) => r.status !== "Order Fulfilled" && r.status !== "cancelled"
+      (r) => r.status !== "Order Fulfilled" && r.status !== "Cancelled"
     );
     const completed = requests.filter(
       (r) =>
@@ -277,35 +274,53 @@ export const CustomerDashboard = () => {
             {t("dashboardSubtitle_customer")}
           </p>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button
-              size="lg"
-              className={cn(
-                "gap-2 w-full sm:w-auto font-semibold text-white transition-all duration-300",
-                "bg-gradient-to-r from-amber-500 to-yellow-500",
-                "hover:from-amber-600 hover:to-yellow-600 hover:scale-105"
-              )}
-            >
-              <PlusCircle size={20} />
-              {t("placeNewOrder")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
-            <DialogHeader>
-              <DialogTitle className="text-gray-800 dark:text-gray-200">
+        {/* --- MODIFICATION: Added a container for the buttons --- */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="lg"
+                className={cn(
+                  "gap-2 w-full sm:w-auto font-semibold text-white transition-all duration-300",
+                  "bg-gradient-to-r from-amber-500 to-yellow-500",
+                  "hover:from-amber-600 hover:to-yellow-600 hover:scale-105"
+                )}
+              >
+                <PlusCircle size={20} />
                 {t("placeNewOrder")}
-              </DialogTitle>
-            </DialogHeader>
-            {/* --- MODIFICATION: onSuccess now refetches and selects the newest request --- */}
-            <NewOrderForm
-              onSuccess={() => {
-                setIsFormOpen(false);
-                fetchRequests(true);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-amber-200 dark:border-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-gray-800 dark:text-gray-200">
+                  {t("placeNewOrder")}
+                </DialogTitle>
+              </DialogHeader>
+              <NewOrderForm
+                onSuccess={() => {
+                  setIsFormOpen(false);
+                  fetchRequests(true);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* --- NEW BUTTON: Order History --- */}
+          <Button
+            size="lg"
+            asChild
+            className={cn(
+              "gap-2 w-full sm:w-auto font-semibold text-white transition-all duration-300",
+              "bg-gradient-to-r from-amber-500 to-yellow-500",
+              "hover:from-amber-600 hover:to-yellow-600 hover:scale-105"
+            )}
+          >
+            <Link to="/order-history" className="flex items-center gap-2">
+              <History size={20} />
+              {t("orderHistory")}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -385,7 +400,6 @@ export const CustomerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* --- NEW: ENHANCED QUANTITY FILTER --- */}
                   <div className="grid gap-2">
                     <label className="text-sm font-medium">
                       Quantity Range
@@ -481,7 +495,6 @@ export const CustomerDashboard = () => {
                     </div>
                   </div>
 
-                  {/* --- NEW: STYLED CLEAR FILTER BUTTON --- */}
                   <Button
                     onClick={clearFilters}
                     className={cn(

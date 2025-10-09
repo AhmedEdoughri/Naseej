@@ -9,7 +9,8 @@ import {
   PackageCheck,
   Navigation,
   Clock,
-  LogIn, // Icon for Awaiting Drop-off
+  LogIn,
+  ArchiveX,
 } from "lucide-react";
 
 type Status =
@@ -23,7 +24,8 @@ type Status =
   | "Preparing Order"
   | "Ready for Pickup"
   | "Out for Delivery"
-  | "Order Fulfilled";
+  | "Order Fulfilled"
+  | "Cancelled";
 
 const statusConfig: Record<
   Status,
@@ -183,7 +185,22 @@ const statusConfig: Record<
       glow: "group-hover:shadow-gray-500/50",
     },
   },
+  Cancelled: {
+    label: "Cancelled",
+    icon: ArchiveX,
+    colors: {
+      bg: "from-slate-100 to-slate-200 dark:from-slate-800/50 dark:to-slate-700/50",
+      bgHover:
+        "group-hover:from-slate-200 group-hover:to-slate-300 dark:group-hover:from-slate-700/50 dark:group-hover:to-slate-600/50",
+      border: "border-slate-300 dark:border-slate-600/50",
+      text: "text-slate-600 dark:text-slate-400",
+      iconBg: "from-slate-500 to-slate-600",
+      glow: "group-hover:shadow-slate-500/50",
+    },
+  },
 };
+
+export type { Status };
 
 export const StatusBadge = ({ status }: { status: Status }) => {
   const config = statusConfig[status] || statusConfig["Order Placed"];

@@ -20,13 +20,11 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-
       if (response.status === 401 && !url.includes("/auth/login")) {
         localStorage.clear();
         window.location.href = "/";
         throw new Error("Session expired. Redirecting...");
       }
-
       throw new Error(
         errorData.message || `API call failed: ${response.statusText}`
       );
@@ -230,7 +228,6 @@ export const api = {
     });
   },
 
-  // --- MODIFICATION: Added approve and reject functions ---
   approveRequest: async (requestId: string) => {
     return fetchApi(`/requests/${requestId}/approve`, {
       method: "PUT",
@@ -241,6 +238,23 @@ export const api = {
     return fetchApi(`/requests/${requestId}/reject`, {
       method: "PUT",
     });
+  },
+
+  // --- NEW: ORDER HISTORY ---
+  getOrderHistory: async (
+    params: { status?: string; search?: string } = {}
+  ) => {
+    // Construct query parameters safely
+    const queryParams = new URLSearchParams();
+    if (params.status) {
+      queryParams.append("status", params.status);
+    }
+    if (params.search) {
+      queryParams.append("search", params.search);
+    }
+    const queryString = queryParams.toString();
+
+    return fetchApi(`/requests/history${queryString ? `?${queryString}` : ""}`);
   },
   // ---------------------------------------------------------
 

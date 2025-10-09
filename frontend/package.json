@@ -45,6 +45,7 @@
     "@types/react-color": "^3.0.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "clx": "^1.0.0",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",

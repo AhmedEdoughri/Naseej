@@ -5,16 +5,22 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Pages
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
+import Contact from "./pages/Contact";
+// --- NEW: Import the OrderHistory page ---
+import OrderHistoryPage from "./pages/OrderHistory";
+
+// Components & Providers
 import { ThemeProvider } from "@/components/theme-provider";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import useInactivityTimeout from "./hooks/useInactivityTimeout";
-import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -24,19 +30,14 @@ const LanguageDirectionManager = () => {
     document.documentElement.lang = i18n.language;
     document.documentElement.dir = i18n.dir(i18n.language);
   }, [i18n, i18n.language]);
-  return null; // This component doesn't render anything
+  return null;
 };
 
-// Updated PrivateRoute to include the inactivity timeout
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = !!localStorage.getItem("token"); // Check if the user is authenticated
-
-  // If the user is authenticated, start the inactivity timer.
-  // This hook will handle logging them out automatically.
+  const isAuthenticated = !!localStorage.getItem("token");
   if (isAuthenticated) {
     useInactivityTimeout();
   }
-
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
@@ -50,9 +51,13 @@ const App = () => (
           <BrowserRouter>
             <LanguageDirectionManager />
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/contact" element={<Contact />} />
+
+              {/* Private Routes */}
               <Route
                 path="/dashboard"
                 element={
@@ -69,8 +74,18 @@ const App = () => (
                   </PrivateRoute>
                 }
               />
+              {/* --- NEW ROUTE FOR ORDER HISTORY --- */}
+              <Route
+                path="/order-history"
+                element={
+                  <PrivateRoute>
+                    <OrderHistoryPage />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Catch-all Route */}
               <Route path="*" element={<NotFound />} />
-              <Route path="/contact" element={<Contact />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
