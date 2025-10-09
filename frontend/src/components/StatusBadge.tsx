@@ -1,22 +1,29 @@
 import {
   Send,
+  Hourglass,
+  CheckCircle2,
+  XCircle,
   Truck,
   Wrench,
   Gift,
   PackageCheck,
   Navigation,
-  CheckCircle2,
   Clock,
+  LogIn, // Icon for Awaiting Drop-off
 } from "lucide-react";
 
 type Status =
-  | "requested"
-  | "pickup"
-  | "working"
-  | "wrapping"
-  | "ready"
-  | "delivery"
-  | "completed";
+  | "Order Placed"
+  | "Pending Approval"
+  | "Approved"
+  | "Rejected"
+  | "Awaiting Drop-off"
+  | "Driver Dispatched"
+  | "In Process"
+  | "Preparing Order"
+  | "Ready for Pickup"
+  | "Out for Delivery"
+  | "Order Fulfilled";
 
 const statusConfig: Record<
   Status,
@@ -33,8 +40,8 @@ const statusConfig: Record<
     };
   }
 > = {
-  requested: {
-    label: "Requested",
+  "Order Placed": {
+    label: "Order Placed",
     icon: Send,
     colors: {
       bg: "from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30",
@@ -46,8 +53,60 @@ const statusConfig: Record<
       glow: "group-hover:shadow-blue-500/50",
     },
   },
-  pickup: {
-    label: "Pickup Scheduled",
+  "Pending Approval": {
+    label: "Pending Approval",
+    icon: Hourglass,
+    colors: {
+      bg: "from-yellow-100 to-yellow-200 dark:from-yellow-900/30 dark:to-yellow-800/30",
+      bgHover:
+        "group-hover:from-yellow-200 group-hover:to-yellow-300 dark:group-hover:from-yellow-800/40 dark:group-hover:to-yellow-700/40",
+      border: "border-yellow-300 dark:border-yellow-700/50",
+      text: "text-yellow-700 dark:text-yellow-300",
+      iconBg: "from-yellow-500 to-yellow-600",
+      glow: "group-hover:shadow-yellow-500/50",
+    },
+  },
+  Approved: {
+    label: "Approved",
+    icon: CheckCircle2,
+    colors: {
+      bg: "from-sky-100 to-sky-200 dark:from-sky-900/30 dark:to-sky-800/30",
+      bgHover:
+        "group-hover:from-sky-200 group-hover:to-sky-300 dark:group-hover:from-sky-800/40 dark:group-hover:to-sky-700/40",
+      border: "border-sky-300 dark:border-sky-700/50",
+      text: "text-sky-700 dark:text-sky-300",
+      iconBg: "from-sky-500 to-sky-600",
+      glow: "group-hover:shadow-sky-500/50",
+    },
+  },
+  Rejected: {
+    label: "Rejected",
+    icon: XCircle, // Corrected Icon
+    colors: {
+      bg: "from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30",
+      bgHover:
+        "group-hover:from-red-200 group-hover:to-red-300 dark:group-hover:from-red-800/40 dark:group-hover:to-red-700/40",
+      border: "border-red-300 dark:border-red-700/50",
+      text: "text-red-700 dark:text-red-300",
+      iconBg: "from-red-500 to-red-600",
+      glow: "group-hover:shadow-red-500/50",
+    },
+  },
+  "Awaiting Drop-off": {
+    label: "Awaiting Drop-off",
+    icon: LogIn,
+    colors: {
+      bg: "from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30",
+      bgHover:
+        "group-hover:from-orange-200 group-hover:to-orange-300 dark:group-hover:from-orange-800/40 dark:group-hover:to-orange-700/40",
+      border: "border-orange-300 dark:border-orange-700/50",
+      text: "text-orange-700 dark:text-orange-300",
+      iconBg: "from-orange-500 to-orange-600",
+      glow: "group-hover:shadow-orange-500/50",
+    },
+  },
+  "Driver Dispatched": {
+    label: "Driver Dispatched",
     icon: Truck,
     colors: {
       bg: "from-cyan-100 to-cyan-200 dark:from-cyan-900/30 dark:to-cyan-800/30",
@@ -59,8 +118,8 @@ const statusConfig: Record<
       glow: "group-hover:shadow-cyan-500/50",
     },
   },
-  working: {
-    label: "Working",
+  "In Process": {
+    label: "In Process",
     icon: Wrench,
     colors: {
       bg: "from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30",
@@ -72,8 +131,8 @@ const statusConfig: Record<
       glow: "group-hover:shadow-amber-500/50",
     },
   },
-  wrapping: {
-    label: "Wrapping",
+  "Preparing Order": {
+    label: "Preparing Order",
     icon: Gift,
     colors: {
       bg: "from-pink-100 to-rose-100 dark:from-pink-900/30 dark:to-rose-900/30",
@@ -85,7 +144,7 @@ const statusConfig: Record<
       glow: "group-hover:shadow-pink-500/50",
     },
   },
-  ready: {
+  "Ready for Pickup": {
     label: "Ready for Pickup",
     icon: PackageCheck,
     colors: {
@@ -98,7 +157,7 @@ const statusConfig: Record<
       glow: "group-hover:shadow-emerald-500/50",
     },
   },
-  delivery: {
+  "Out for Delivery": {
     label: "Out for Delivery",
     icon: Navigation,
     colors: {
@@ -111,23 +170,23 @@ const statusConfig: Record<
       glow: "group-hover:shadow-violet-500/50",
     },
   },
-  completed: {
-    label: "Completed",
+  "Order Fulfilled": {
+    label: "Order Fulfilled",
     icon: CheckCircle2,
     colors: {
-      bg: "from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30",
+      bg: "from-gray-100 to-gray-200 dark:from-gray-700/50 dark:to-gray-600/50",
       bgHover:
-        "group-hover:from-green-200 group-hover:to-emerald-200 dark:group-hover:from-green-800/40 dark:group-hover:to-emerald-800/40",
-      border: "border-green-300 dark:border-green-700/50",
-      text: "text-green-700 dark:text-green-300",
-      iconBg: "from-green-500 to-emerald-500",
-      glow: "group-hover:shadow-green-500/50",
+        "group-hover:from-gray-200 group-hover:to-gray-300 dark:group-hover:from-gray-600/50 dark:group-hover:to-gray-500/50",
+      border: "border-gray-300 dark:border-gray-600/50",
+      text: "text-gray-700 dark:text-gray-300",
+      iconBg: "from-gray-500 to-gray-600",
+      glow: "group-hover:shadow-gray-500/50",
     },
   },
 };
 
 export const StatusBadge = ({ status }: { status: Status }) => {
-  const config = statusConfig[status] || statusConfig.requested;
+  const config = statusConfig[status] || statusConfig["Order Placed"];
   const Icon = config.icon;
 
   return (

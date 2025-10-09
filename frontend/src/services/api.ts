@@ -18,11 +18,9 @@ const fetchApi = async (url: string, options: RequestInit = {}) => {
       headers,
     });
 
-    // Handle unauthorized responses differently based on context
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
 
-      // Only force logout for authenticated routes (not /auth/login)
       if (response.status === 401 && !url.includes("/auth/login")) {
         localStorage.clear();
         window.location.href = "/";
@@ -57,7 +55,7 @@ export const api = {
   login: async (identifier: string, password: string, role: string | null) => {
     return fetchApi("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ identifier, password, role }), // Changed email to identifier
+      body: JSON.stringify({ identifier, password, role }),
     });
   },
   registerStore: async (data: any) => {
@@ -79,7 +77,6 @@ export const api = {
   },
   createCustomer: async (customerData: any) => {
     return fetchApi("/users/customer", {
-      // This points to the correct new route
       method: "POST",
       body: JSON.stringify(customerData),
     });
@@ -232,6 +229,20 @@ export const api = {
       body: JSON.stringify({ notes }),
     });
   },
+
+  // --- MODIFICATION: Added approve and reject functions ---
+  approveRequest: async (requestId: string) => {
+    return fetchApi(`/requests/${requestId}/approve`, {
+      method: "PUT",
+    });
+  },
+
+  rejectRequest: async (requestId: string) => {
+    return fetchApi(`/requests/${requestId}/reject`, {
+      method: "PUT",
+    });
+  },
+  // ---------------------------------------------------------
 
   // -- login auth for firs time --
   changePassword: async (newPassword: string, confirmPassword: string) => {

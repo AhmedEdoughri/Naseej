@@ -1,34 +1,54 @@
 const express = require("express");
 const router = express.Router();
-const requestsController = require("../controllers/requestsController");
+
+// --- MODIFICATION: Import the new controller functions ---
+
+const {
+  createRequest,
+  getRequests,
+  cancelRequest,
+  updateRequestNotes,
+  approveRequest,
+  rejectRequest,
+} = require("../controllers/requestsController");
+
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// Existing routes for creating and getting requests
 router
   .route("/")
-  .post(protect, authorize("customer"), requestsController.createRequest)
-  .get(
-    protect,
-    authorize("admin", "manager", "customer"),
-    requestsController.getRequests
-  );
+  .post(protect, authorize("customer"), createRequest)
+  .get(protect, authorize("admin", "manager", "customer"), getRequests);
 
-// New route for cancelling a request
 router
   .route("/:id/cancel")
-  .put(
-    protect,
-    authorize("admin", "manager", "customer"),
-    requestsController.cancelRequest
-  );
+  .put(protect, authorize("admin", "manager", "customer"), cancelRequest);
 
-// New route for updating request notes
 router
   .route("/:id/notes")
-  .put(
-    protect,
-    authorize("admin", "manager", "customer"),
-    requestsController.updateRequestNotes
+  .put(protect, authorize("admin", "manager", "customer"), updateRequestNotes);
+
+// --- MODIFICATION: Add new routes for approval and rejection ---
+
+// These routes are restricted to managers and admins only.
+
+router
+  .route("/:id/approve")
+  .put(protect, authorize("admin", "manager"), approveRequest);
+
+router
+  .route("/:id/reject")
+  .put(protect, authorize("admin", "manager"), rejectRequest);
+
+router
+  .route("/:id/dispatch")
+  .put(protect, authorize("admin", "manager"), (req, res) =>
+    updateRequestStatus(res, req.params.id, "Driver Dispatched")
+  );
+
+router
+  .route("/:id/delivery")
+  .put(protect, authorize("admin", "manager"), (req, res) =>
+    updateRequestStatus(res, req.params.id, "Out for Delivery")
   );
 
 module.exports = router;
