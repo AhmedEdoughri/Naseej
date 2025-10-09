@@ -12,6 +12,7 @@ import {
   EyeOff,
   CheckCircle2,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -28,6 +29,16 @@ import {
   WorkerDashboard,
   ManagerDashboard,
 } from "@/components/dashboards";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const roleData = {
   customer: {
@@ -76,6 +87,7 @@ export default function Dashboard() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
+  const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -133,9 +145,14 @@ export default function Dashboard() {
     };
   }, [dropdownOpen]);
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     localStorage.clear();
     navigate("/");
+  };
+
+  const handleLogoutClick = () => {
+    setDropdownOpen(false);
+    setIsLogoutAlertOpen(true);
   };
 
   const handlePasswordChange = async () => {
@@ -311,9 +328,10 @@ export default function Dashboard() {
                           Change Password
                         </button>
                       )}
+                      {/* This button now correctly triggers the dialog */}
                       <button
                         className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/20 dark:hover:to-red-800/20 transition-all duration-200 flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium border-t border-gray-200 dark:border-gray-700"
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                       >
                         <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
                         Logout
@@ -325,6 +343,40 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+
+        <AlertDialog
+          open={isLogoutAlertOpen}
+          onOpenChange={setIsLogoutAlertOpen}
+        >
+          <AlertDialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white via-amber-50/20 to-yellow-50/10 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800/50 backdrop-blur-sm border-2 border-amber-300 dark:border-amber-700/50 shadow-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400 flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg">
+                  <AlertTriangle className="text-white h-6 w-6" />
+                </div>
+                Confirm Logout
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base mt-3 bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500">
+                Are you sure you want to end your session? You will be returned
+                to the main page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 mt-6">
+              <AlertDialogCancel asChild>
+                <button className="px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-800 dark:to-gray-700 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95">
+                  Go Back
+                </button>
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
+                onClick={confirmLogout}
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative">Yes, Log Out</span>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm animate-fade-in p-4">
