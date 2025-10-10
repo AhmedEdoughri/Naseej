@@ -8,7 +8,7 @@ import {
   WorkerDashboard,
   ManagerDashboard,
 } from "@/components/dashboards";
-import { DashboardHeader } from "@/components/DashboardHeader"; // Import the new header
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 const roleData = {
   customer: { title: "Customer Dashboard", icon: Store },
