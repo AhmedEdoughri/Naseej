@@ -153,6 +153,7 @@ export const CustomerDashboard = () => {
   const [editingRequest, setEditingRequest] = useState<any | null>(null);
   const [editedNotes, setEditedNotes] = useState("");
   const [requestToCancel, setRequestToCancel] = useState<string | null>(null);
+  const [cancellationNote, setCancellationNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>();
   const [filterQuantity, setFilterQuantity] = useState<number[]>([0, 500]);
@@ -216,12 +217,13 @@ export const CustomerDashboard = () => {
   const confirmCancelRequest = async () => {
     if (requestToCancel) {
       try {
-        await api.cancelRequest(requestToCancel);
-        fetchRequests();
+        await api.cancelRequest(requestToCancel, cancellationNote);
+        fetchRequests(true);
       } catch (error) {
         console.error("Failed to cancel request:", error);
       } finally {
         setRequestToCancel(null);
+        setCancellationNote("");
       }
     }
   };
@@ -571,26 +573,56 @@ export const CustomerDashboard = () => {
       </Dialog>
       <AlertDialog
         open={!!requestToCancel}
-        onOpenChange={() => setRequestToCancel(null)}
+        onOpenChange={() => {
+          setRequestToCancel(null);
+          setCancellationNote("");
+        }}
       >
         <AlertDialogContent className="sm:max-w-[425px] bg-gradient-to-br from-white via-amber-50/20 to-yellow-50/10 dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800/50 backdrop-blur-sm border-2 border-amber-300 dark:border-amber-700/50 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-yellow-400 flex items-center gap-2">
               Cancel Request?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base mt-3 bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500">
+          </AlertDialogHeader>
+
+          <div className="bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500 space-y-4">
+            <div>
+              <label
+                htmlFor="cancellation-note"
+                className="text-sm font-medium text-gray-800 dark:text-gray-200"
+              >
+                Reason for Cancellation
+              </label>
+              <Textarea
+                id="cancellation-note"
+                value={cancellationNote}
+                onChange={(e) => setCancellationNote(e.target.value)}
+                placeholder="Please provide a reason for cancelling..."
+                className="mt-2 bg-white/50 dark:bg-gray-800/50 focus-visible:ring-amber-500 border-amber-300 dark:border-gray-600"
+                rows={3}
+              />
+            </div>
+
+            <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base">
               This action cannot be undone. Your request will be permanently
               cancelled.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 mt-6">
+          </div>
+
+          <AlertDialogFooter className="gap-2 mt-4">
             <AlertDialogCancel asChild>
               <button className="px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-800 dark:to-gray-700 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95">
                 Go Back
               </button>
             </AlertDialogCancel>
             <AlertDialogAction
-              className="group relative px-5 py-2.5 bg-gradient-to-br from-red-500 to-red-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border border-red-400/30 overflow-hidden"
+              disabled={!cancellationNote}
+              className={cn(
+                "group relative px-5 py-2.5 text-white font-semibold rounded-lg shadow-lg transition-all duration-200 border border-red-400/30 overflow-hidden",
+                !cancellationNote
+                  ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                  : "bg-gradient-to-br from-red-500 to-red-700 hover:shadow-xl hover:scale-[1.02] active:scale-95"
+              )}
               onClick={confirmCancelRequest}
             >
               <span className="relative">Yes, Cancel Request</span>

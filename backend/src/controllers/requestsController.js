@@ -1,5 +1,29 @@
 const { poolPromise, sql } = require("../config/db");
 
+// Helper function to log status changes
+const logStatusChange = async (
+  transaction,
+  requestId,
+  userId,
+  previousStatus,
+  newStatus,
+  note
+) => {
+  const request = transaction
+    ? new sql.Request(transaction)
+    : (await poolPromise).request();
+  await request
+    .input("request_id", sql.UniqueIdentifier, requestId)
+    .input("user_id", sql.UniqueIdentifier, userId)
+    .input("previous_status", sql.VarChar, previousStatus)
+    .input("new_status", sql.VarChar, newStatus)
+    .input("note", sql.Text, note) // Add the 'note' input
+    .query(`
+      INSERT INTO request_status_history (request_id, user_id, previous_status, new_status, note)
+      VALUES (@request_id, @user_id, @previous_status, @new_status, @note);
+    `);
+};
+
 // @desc    Create a request
 // @route   POST /api/requests
 exports.createRequest = async (req, res) => {
@@ -11,7 +35,7 @@ exports.createRequest = async (req, res) => {
   const transaction = new sql.Transaction(pool);
 
   try {
-    await transaction.begin(); // --- 1. Find the store linked to this user ---
+    await transaction.begin();
 
     const storeResult = await new sql.Request(transaction)
       .input("user_id", sql.UniqueIdentifier, requested_by_user_id)
@@ -22,7 +46,8 @@ exports.createRequest = async (req, res) => {
       return res.status(400).json({ message: "No store found for this user" });
     }
 
-    const store_id = storeResult.recordset[0].id; // --- 2. Insert request and set initial status to 'Pending Approval' ---
+    const store_id = storeResult.recordset[0].id;
+    const initialStatus = "Pending Approval";
 
     const requestResult = await new sql.Request(transaction)
       .input("store_id", sql.UniqueIdentifier, store_id)
@@ -32,8 +57,7 @@ exports.createRequest = async (req, res) => {
       .input("deadline", sql.Date, deadline)
       .input("inbound_option", sql.VarChar, inbound_option)
       .input("outbound_option", sql.VarChar, outbound_option)
-      .input("status", sql.VarChar, "Pending Approval") // Set the initial status here
-      .query(`
+      .input("status", sql.VarChar, initialStatus).query(`
         INSERT INTO requests
           (store_id, requested_by_user_id, notes, total_qty, deadline, inbound_option, outbound_option, status)
         OUTPUT INSERTED.id
@@ -41,7 +65,16 @@ exports.createRequest = async (req, res) => {
           (@store_id, @requested_by_user_id, @notes, @total_qty, @deadline, @inbound_option, @outbound_option, @status)
       `);
 
-    const requestId = requestResult.recordset[0].id; // --- 3. Insert items if provided ---
+    const requestId = requestResult.recordset[0].id;
+
+    // Log the initial status creation
+    await logStatusChange(
+      transaction,
+      requestId,
+      requested_by_user_id,
+      null,
+      initialStatus
+    );
 
     if (items && items.length > 0) {
       for (const item of items) {
@@ -73,8 +106,8 @@ exports.createRequest = async (req, res) => {
 exports.getRequests = async (req, res) => {
   try {
     const pool = await poolPromise;
-    let query = "SELECT * FROM requests"; // Start with the base query
-    const whereClauses = []; // Always exclude cancelled, unless you're an admin who wants to see them
+    let query = "SELECT * FROM requests";
+    const whereClauses = [];
 
     if (req.user.role !== "admin") {
       whereClauses.push("status <> 'Cancelled'");
@@ -93,7 +126,6 @@ exports.getRequests = async (req, res) => {
         return res.status(200).json([]);
       }
     } else if (req.user.role === "manager") {
-      // Managers should see requests pending their approval
       whereClauses.push("status = 'Pending Approval'");
     }
 
@@ -111,68 +143,145 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTIONS FOR APPROVAL ---
-const updateRequestStatus = async (res, requestId, newStatus) => {
+const updateRequestStatus = async (req, res, newStatus) => {
+  const { note } = req.body;
   const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+  const requestId = req.params.id;
+  const userId = req.user.userId;
+
   try {
-    // Fetch request details first
-    const requestResult = await pool
-      .request()
-      .input("requestId", sql.UniqueIdentifier, requestId).query(`
+    await transaction.begin();
+
+    const requestResult = await new sql.Request(transaction).input(
+      "requestId",
+      sql.UniqueIdentifier,
+      requestId
+    ).query(`
         SELECT inbound_option, outbound_option, status
         FROM requests
         WHERE id = @requestId
       `);
 
     if (!requestResult.recordset[0]) {
+      await transaction.rollback();
       return res.status(404).json({ message: "Request not found" });
     }
 
-    const { inbound_option, outbound_option } = requestResult.recordset[0];
+    const {
+      inbound_option,
+      outbound_option,
+      status: previousStatus,
+    } = requestResult.recordset[0];
     let finalStatus = newStatus;
 
-    // --- Automatic transitions ---
     if (newStatus === "Approved") {
       if (inbound_option === "customer_dropoff") {
-        finalStatus = "Awaiting Drop-off"; // auto move to drop-off
+        finalStatus = "Awaiting Drop-off";
       }
     }
 
     if (newStatus === "Preparing Order") {
       if (outbound_option === "customer_pickup") {
-        finalStatus = "Ready for Pickup"; // auto move to ready
+        finalStatus = "Ready for Pickup";
       }
     }
 
-    // Update status in DB
-    await pool
-      .request()
+    await new sql.Request(transaction)
       .input("requestId", sql.UniqueIdentifier, requestId)
       .input("status", sql.VarChar, finalStatus)
       .query("UPDATE requests SET status = @status WHERE id = @requestId");
+
+    // Pass the note to the logging function
+    await logStatusChange(
+      transaction,
+      requestId,
+      userId,
+      previousStatus,
+      finalStatus,
+      note // Pass the note here
+    );
+
+    await transaction.commit();
 
     res.status(200).json({
       message: `Request status updated to ${finalStatus}`,
       newStatus: finalStatus,
     });
   } catch (error) {
+    await transaction.rollback();
     console.error("Error updating request status:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// @desc    Get a single request by its ID with status history
+// @route   GET /api/requests/:id
+exports.getRequestDetails = async (req, res) => {
+  const { id } = req.params;
+  const { userId, role } = req.user;
+
+  try {
+    const pool = await poolPromise;
+
+    // 1. Fetch the main request details
+    const requestResult = await pool
+      .request()
+      .input("requestId", sql.UniqueIdentifier, id)
+      .query("SELECT * FROM requests WHERE id = @requestId");
+
+    if (requestResult.recordset.length === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    const requestDetails = requestResult.recordset[0];
+
+    // Security check: Ensure the user has permission to view this request
+    if (role === "customer") {
+      const storeResult = await pool
+        .request()
+        .input("user_id", sql.UniqueIdentifier, userId)
+        .query("SELECT id FROM stores WHERE user_id = @user_id");
+
+      const userStoreId = storeResult.recordset[0]?.id;
+      if (requestDetails.store_id !== userStoreId) {
+        return res.status(403).json({
+          message: "Forbidden: You do not have access to this request.",
+        });
+      }
+    }
+
+    // 2. Fetch the status history for that request
+    const historyResult = await pool
+      .request()
+      .input("requestId", sql.UniqueIdentifier, id)
+      .query(
+        "SELECT * FROM request_status_history WHERE request_id = @requestId ORDER BY changed_at ASC"
+      );
+
+    // 3. Combine them into a single response object
+    const response = {
+      ...requestDetails,
+      status_history: historyResult.recordset,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error fetching request details:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 exports.approveRequest = (req, res) => {
-  updateRequestStatus(res, req.params.id, "Approved");
+  updateRequestStatus(req, res, "Approved");
 };
 
 exports.rejectRequest = (req, res) => {
-  updateRequestStatus(res, req.params.id, "Rejected");
+  updateRequestStatus(req, res, "Rejected");
 };
 
-// ------------------------------------
-
 exports.cancelRequest = (req, res) => {
-  updateRequestStatus(res, req.params.id, "Cancelled");
+  updateRequestStatus(req, res, "Cancelled");
 };
 
 exports.updateRequestNotes = async (req, res) => {
@@ -192,11 +301,6 @@ exports.updateRequestNotes = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get order history for users based on their role
- * @route   GET /api/requests/history
- * @access  Private (Customer, Manager, Admin)
- */
 exports.getOrderHistory = async (req, res) => {
   const { status, search } = req.query;
   const { userId, role } = req.user;
@@ -204,10 +308,20 @@ exports.getOrderHistory = async (req, res) => {
   try {
     const pool = await poolPromise;
     const request = pool.request();
-    let query = "SELECT * FROM requests";
+    let query = `
+      SELECT
+        r.*,
+        cancel_hist.note AS cancellation_reason,
+        reject_hist.note AS rejection_reason 
+      FROM
+        requests r
+      LEFT JOIN
+        request_status_history cancel_hist ON r.id = cancel_hist.request_id AND cancel_hist.new_status = 'Cancelled'
+      LEFT JOIN
+        request_status_history reject_hist ON r.id = reject_hist.request_id AND reject_hist.new_status = 'Rejected'
+    `;
     const whereClauses = [];
 
-    // ROLE-BASED LOGIC
     if (role === "customer") {
       const storeResult = await pool
         .request()
@@ -222,14 +336,11 @@ exports.getOrderHistory = async (req, res) => {
       request.input("store_id", sql.UniqueIdentifier, store_id);
     }
 
-    // STATUS FILTERING
     if (status) {
-      // Exact match, case-insensitive
       whereClauses.push("LOWER(status) = LOWER(@status)");
       request.input("status", sql.VarChar, status.trim());
     }
 
-    // SEARCH FILTERING
     if (search) {
       whereClauses.push(
         "(CAST(order_number AS VARCHAR(50)) LIKE @search OR CAST(id AS VARCHAR(36)) LIKE @search)"
@@ -249,4 +360,12 @@ exports.getOrderHistory = async (req, res) => {
     console.error("Error fetching order history:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
+};
+
+exports.dispatchRequest = (req, res) => {
+  updateRequestStatus(req, res, "Driver Dispatched");
+};
+
+exports.deliverRequest = (req, res) => {
+  updateRequestStatus(req, res, "Out for Delivery");
 };

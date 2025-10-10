@@ -215,9 +215,13 @@ export const api = {
     return fetchApi("/requests");
   },
 
-  cancelRequest: async (requestId: string) => {
+  cancelRequest: async (requestId: string, note: string) => {
     return fetchApi(`/requests/${requestId}/cancel`, {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ note }),
     });
   },
 
@@ -234,9 +238,13 @@ export const api = {
     });
   },
 
-  rejectRequest: async (requestId: string) => {
+  rejectRequest: async (requestId: string, note: string) => {
     return fetchApi(`/requests/${requestId}/reject`, {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ note }),
     });
   },
 
