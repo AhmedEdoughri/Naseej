@@ -31,6 +31,8 @@ interface Order {
   total_qty: number;
   notes?: string;
   requested_at: string;
+  cancellation_reason?: string;
+  rejection_reason?: string;
 }
 
 const OrderHistoryPage = () => {
@@ -102,6 +104,29 @@ const OrderHistoryPage = () => {
             <StatusBadge status={order.status as Status} />
           </div>
         </div>
+
+        {order.status === "Rejected" && order.rejection_reason && (
+          <div className="mt-4 border-t border-red-200 dark:border-red-900/50 pt-3 bg-red-50/50 dark:bg-red-900/10 p-3 rounded-md">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              <strong className="font-semibold text-red-600 dark:text-red-400">
+                Rejection Reason:
+              </strong>{" "}
+              {order.rejection_reason}
+            </p>
+          </div>
+        )}
+
+        {order.status === "Cancelled" && order.cancellation_reason && (
+          <div className="mt-4 border-t border-red-200 dark:border-red-900/50 pt-3 bg-red-50/50 dark:bg-red-900/10 p-3 rounded-md">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              <strong className="font-semibold text-red-600 dark:text-red-400">
+                Cancellation Reason:
+              </strong>{" "}
+              {order.cancellation_reason}
+            </p>
+          </div>
+        )}
+
         <div className="mt-4 border-t border-amber-100 dark:border-gray-700 pt-4 flex flex-col sm:flex-row justify-between text-sm">
           <div className="text-gray-600 dark:text-gray-400">
             <p>

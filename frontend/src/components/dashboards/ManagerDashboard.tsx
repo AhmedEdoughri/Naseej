@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Package,
-  AlertCircle,
-  Truck,
-  BarChart3,
-  PlusCircle,
-} from "lucide-react";
+import { Package, AlertCircle, Truck, BarChart3 } from "lucide-react";
 import { EnhancedMetricCard } from "@/components/EnhancedMetricCard";
 import { ReportsTab } from "@/components/ReportsTab";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -21,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { api } from "@/services/api";
-
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -40,6 +34,7 @@ export const ManagerDashboard = () => {
   const [currentAction, setCurrentAction] = useState<
     "approve" | "reject" | null
   >(null);
+  const [rejectionNote, setRejectionNote] = useState("");
 
   useEffect(() => {
     const fetchPendingRequests = async () => {
@@ -63,7 +58,7 @@ export const ManagerDashboard = () => {
       if (currentAction === "approve") {
         await api.approveRequest(currentRequestId);
       } else {
-        await api.rejectRequest(currentRequestId);
+        await api.rejectRequest(currentRequestId, rejectionNote);
       }
       setPendingRequests((prev) =>
         prev.filter((req) => req.id !== currentRequestId)
@@ -74,6 +69,7 @@ export const ManagerDashboard = () => {
       setIsDialogOpen(false);
       setCurrentRequestId(null);
       setCurrentAction(null);
+      setRejectionNote("");
     }
   };
 
@@ -182,11 +178,37 @@ export const ManagerDashboard = () => {
                 ? "Approve Request?"
                 : "Reject Request?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base mt-3 bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500">
+          </AlertDialogHeader>
+
+          {/* --- CORRECTED STRUCTURE WITH SHARED BACKGROUND --- */}
+          <div className="bg-amber-100/50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-amber-500 space-y-4">
+            {/* Conditionally render the rejection reason input */}
+            {currentAction === "reject" && (
+              <div>
+                <label
+                  htmlFor="rejection-note"
+                  className="text-sm font-medium text-gray-800 dark:text-gray-200"
+                >
+                  Reason for Rejection
+                </label>
+                <Textarea
+                  id="rejection-note"
+                  value={rejectionNote}
+                  onChange={(e) => setRejectionNote(e.target.value)}
+                  placeholder="Provide a clear reason for rejection..."
+                  className="mt-2 bg-white/50 dark:bg-gray-800/50 focus-visible:ring-amber-500 border-amber-300 dark:border-gray-600"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* The main description text */}
+            <AlertDialogDescription className="text-gray-700 dark:text-gray-300 text-base">
               Are you sure you want to {currentAction} this request? This action
               cannot be undone.
             </AlertDialogDescription>
-          </AlertDialogHeader>
+          </div>
+
           <AlertDialogFooter className="gap-2 mt-6">
             <AlertDialogCancel asChild>
               <button className="px-5 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 dark:from-gray-800 dark:to-gray-700 dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95">
@@ -194,11 +216,17 @@ export const ManagerDashboard = () => {
               </button>
             </AlertDialogCancel>
             <AlertDialogAction
+              // Disable button if rejecting without a note
+              disabled={currentAction === "reject" && !rejectionNote}
               className={cn(
                 "group relative px-5 py-2.5 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] active:scale-95 border overflow-hidden",
                 currentAction === "approve"
                   ? "bg-gradient-to-br from-green-500 to-green-700 border-green-400/30"
-                  : "bg-gradient-to-br from-red-500 to-red-700 border-red-400/30"
+                  : "bg-gradient-to-br from-red-500 to-red-700 border-red-400/30",
+                // Add disabled styling
+                currentAction === "reject" &&
+                  !rejectionNote &&
+                  "bg-gray-400 dark:bg-gray-600 cursor-not-allowed border-gray-300 dark:border-gray-500"
               )}
               onClick={handleAction}
             >

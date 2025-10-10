@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-// --- MODIFICATION: Import the new controller functions ---
-
 const {
   createRequest,
   getRequests,
@@ -11,26 +9,44 @@ const {
   approveRequest,
   rejectRequest,
   getOrderHistory,
+  getRequestDetails,
+  dispatchRequest, // Import the new function
+  deliverRequest, // Import the new function
 } = require("../controllers/requestsController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
+// --- Main Routes ---
 router
   .route("/")
   .post(protect, authorize("customer"), createRequest)
   .get(protect, authorize("admin", "manager", "customer"), getRequests);
 
+// --- CORRECTED ROUTE ORDER ---
+// Specific routes MUST come before parameterized routes.
+router.get(
+  "/history",
+  protect,
+  authorize("customer", "manager", "admin"),
+  getOrderHistory
+);
+
+router
+  .route("/:id")
+  .get(protect, authorize("admin", "manager", "customer"), getRequestDetails);
+
+// --- Action Routes ---
 router
   .route("/:id/cancel")
   .put(protect, authorize("admin", "manager", "customer"), cancelRequest);
 
 router
   .route("/:id/notes")
-  .put(protect, authorize("admin", "manager", "customer"), updateRequestNotes);
-
-// --- MODIFICATION: Add new routes for approval and rejection ---
-
-// These routes are restricted to managers and admins only.
+  .patch(
+    protect,
+    authorize("admin", "manager", "customer"),
+    updateRequestNotes
+  ); // Note: PATCH is more appropriate here
 
 router
   .route("/:id/approve")
@@ -40,26 +56,13 @@ router
   .route("/:id/reject")
   .put(protect, authorize("admin", "manager"), rejectRequest);
 
+// CORRECTED: Using dedicated controller functions now
 router
   .route("/:id/dispatch")
-  .put(protect, authorize("admin", "manager"), (req, res) =>
-    updateRequestStatus(res, req.params.id, "Driver Dispatched")
-  );
+  .put(protect, authorize("admin", "manager"), dispatchRequest);
 
 router
   .route("/:id/delivery")
-  .put(protect, authorize("admin", "manager"), (req, res) =>
-    updateRequestStatus(res, req.params.id, "Out for Delivery")
-  );
-
-// @desc    Get order history for users
-// @route   GET /api/requests/history
-// @access  Private (Customer, Manager, Admin)
-router.get(
-  "/history",
-  protect,
-  authorize("customer", "manager", "admin"),
-  getOrderHistory
-);
+  .put(protect, authorize("admin", "manager"), deliverRequest);
 
 module.exports = router;

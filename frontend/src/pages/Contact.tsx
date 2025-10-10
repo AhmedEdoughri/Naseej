@@ -60,102 +60,114 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-900 dark:via-slate-950 flex items-center justify-center p-4 pt-32">
-      <Header />
-      <div
-        className={`
-          w-full max-w-2xl relative z-10
-          transform transition-all duration-1000 ease-out
-          ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
-        `}
-      >
-        <Card className="relative bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg shadow-2xl border-amber-200 dark:border-gray-800">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-            className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-lg group dark:border-slate-700 dark:bg-slate-800/70"
-          >
-            <ArrowLeft className="h-5 w-5 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
-          </button>
-          <CardHeader className="text-center pt-12">
-            <Mail className="mx-auto h-12 w-12 text-amber-500" />
-            <CardTitle className="text-3xl font-bold mt-4">
-              Contact Us
-            </CardTitle>
-            <CardDescription className="text-lg text-muted-foreground">
-              Have a question or feedback? Fill out the form below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-900 dark:via-slate-950">
+      {/* Header always stays at the top */}
+      <div dir="ltr">
+        <Header />
+      </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
-              </div>
+      {/* Form container */}
+      <div className="flex-1 flex items-center justify-center p-4 pt-12">
+        <div
+          className={`
+            w-full max-w-2xl relative z-10
+            transform transition-all duration-1000 ease-out
+            ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
+            }
+          `}
+        >
+          <Card className="relative bg-white/90 dark:bg-slate-800/80 backdrop-blur-lg shadow-2xl border-amber-200 dark:border-gray-800">
+            <button
+              onClick={() => navigate(-1)}
+              aria-label="Go back"
+              className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 bg-white/80 shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-lg group dark:border-slate-700 dark:bg-slate-800/70"
+            >
+              <ArrowLeft className="h-5 w-5 text-amber-600 transition-transform duration-300 group-hover:-translate-x-1 dark:text-amber-400" />
+            </button>
+            <CardHeader className="text-center pt-12">
+              <Mail className="mx-auto h-12 w-12 text-amber-500" />
+              <CardTitle className="text-3xl font-bold mt-4">
+                Contact Us
+              </CardTitle>
+              <CardDescription className="text-lg text-muted-foreground">
+                Have a question or feedback? Fill out the form below.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
 
-              <div className="text-center text-sm text-muted-foreground">
-                OR
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                />
-              </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  OR
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    disabled={isLoading}
+                    rows={6}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600 shadow-lg transform transition-all duration-300 hover:scale-105"
                   disabled={isLoading}
-                  rows={6}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600 shadow-lg transform transition-all duration-300 hover:scale-105"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  "Sending..."
-                ) : (
-                  <>
-                    Send Message <Send className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                >
+                  {isLoading ? (
+                    "Sending..."
+                  ) : (
+                    <>
+                      Send Message <Send className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
