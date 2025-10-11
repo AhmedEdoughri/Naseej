@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SketchPicker, ColorResult } from "react-color";
+import { HexColorPicker } from "react-colorful";
 
 // Interface for a single status object
 interface Status {
@@ -76,10 +76,6 @@ export const StatusForm = ({
     }
   };
 
-  const handleColorChange = (colorResult: ColorResult) => {
-    setFormData((prev) => ({ ...prev, color: colorResult.hex }));
-  };
-
   const validate = (): boolean => {
     const newErrors: StatusErrors = {};
     if (!formData.name.trim()) newErrors.name = "Status name is required.";
@@ -104,13 +100,13 @@ export const StatusForm = ({
     }
   };
 
-  const popover: React.CSSProperties = { position: "absolute", zIndex: "2" };
+  const popover: React.CSSProperties = { position: "absolute", zIndex: 2 };
   const cover: React.CSSProperties = {
     position: "fixed",
-    top: "0px",
-    right: "0px",
-    bottom: "0px",
-    left: "0px",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   };
 
   return (
@@ -144,7 +140,7 @@ export const StatusForm = ({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Color Picker Input */}
+        {/* Color Picker */}
         <div className="space-y-2">
           <Label htmlFor="color">Color</Label>
           <div className="flex items-center gap-2">
@@ -165,16 +161,17 @@ export const StatusForm = ({
               className="w-24"
             />
           </div>
-          {displayColorPicker ? (
+          {displayColorPicker && (
             <div style={popover}>
               <div style={cover} onClick={() => setDisplayColorPicker(false)} />
-              {/* No special class needed here anymore */}
-              <SketchPicker
+              <HexColorPicker
                 color={formData.color}
-                onChange={handleColorChange}
+                onChange={(color) =>
+                  setFormData((prev) => ({ ...prev, color }))
+                }
               />
             </div>
-          ) : null}
+          )}
           {errors.color && (
             <p className="text-sm text-destructive">{errors.color}</p>
           )}

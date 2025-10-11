@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import namer from "color-namer"; // <-- import color-namer
 
 interface Status {
   id: number;
@@ -41,6 +42,9 @@ export const DraggableStatusRow = ({
     position: "relative" as const,
   };
 
+  // Convert hex to a readable color name
+  const colorName = namer(status.color).pantone[0].name; // you can also try .ntc or .basic
+
   return (
     <TableRow ref={setNodeRef} style={style} {...attributes}>
       <TableCell className="w-12 cursor-grab" {...listeners}>
@@ -55,7 +59,7 @@ export const DraggableStatusRow = ({
             className="h-4 w-4 rounded-full"
             style={{ backgroundColor: status.color }}
           />
-          {status.color}
+          <span>{colorName}</span> {/* display the color name */}
         </div>
       </TableCell>
       <TableCell className="text-right space-x-2">

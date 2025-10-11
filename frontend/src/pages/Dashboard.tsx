@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Store, Truck, Users, BarChart3 } from "lucide-react";
 import { useSettings } from "../contexts/SettingsContext";
-import {
-  CustomerDashboard,
-  DriverDashboard,
-  WorkerDashboard,
-  ManagerDashboard,
-} from "@/components/dashboards";
+import { CustomerDashboard } from "../pages/CustomerDashboard";
+import { DriverDashboard } from "../pages/DriverDashboard";
+import { WorkerDashboard } from "../pages/WorkerDashboard";
+import { ManagerDashboard } from "../pages/ManagerDashboard";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 const roleData = {

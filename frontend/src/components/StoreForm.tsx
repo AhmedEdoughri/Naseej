@@ -113,7 +113,6 @@ export const StoreForm = ({ store, onSubmit, onClose }: StoreFormProps) => {
             value={formData.email}
             onChange={handleChange}
             required
-            disabled={!!store}
           />
         </div>
         {/* Only show the password field when creating a new user (when 'store' is null) */}

@@ -12,7 +12,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
-import AdminPanel from "./pages/AdminPanel";
+import AdminPanel from "./pages/AdminDashboard";
 import Contact from "./pages/Contact";
 // --- NEW: Import the OrderHistory page ---
 import OrderHistoryPage from "./pages/OrderHistory";

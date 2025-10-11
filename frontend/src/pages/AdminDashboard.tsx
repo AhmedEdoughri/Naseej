@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
@@ -14,21 +13,11 @@ import { EnhancedMetricCard } from "../components/EnhancedMetricCard";
 import { SettingsTab } from "../components/SettingsTab";
 
 // --- NEWLY EXTRACTED TAB COMPONENT ---
-import { UserManagementTab } from "../components/admin/UserManagementTab";
-import { CustomerManagementTab } from "../components/admin/CustomerManagementTab";
-import { WorkflowSettingsTab } from "../components/admin/WorkflowSettingsTab";
+import { UserManagementTab } from "../features/admin/UserManagementTab";
+import { CustomerManagementTab } from "../features/admin/CustomerManagementTab";
+import { WorkflowSettingsTab } from "../features/admin/WorkflowSettingsTab";
 
-// --- DIALOGS AND OTHER COMPONENTS FOR OTHER TABS ---
-// Note: We will extract these in later steps
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { StoreForm } from "../components/StoreForm";
-import { StatusForm } from "../components/StatusForm";
+import { Dialog } from "@/components/ui/dialog";
 
 // --- Type Definitions ---
 interface User {
@@ -78,7 +67,7 @@ interface Status {
 }
 
 // --- Main AdminPanel Component ---
-const AdminPanel = () => {
+export const AdminPanel = () => {
   const { t, i18n } = useTranslation();
 
   // --- State Management for the entire Admin Panel ---
@@ -239,22 +228,28 @@ const AdminPanel = () => {
     }
   };
 
-  const handleStatusSubmit = async (statusData: Omit<Status, "id">) => {
+  const handleStatusSubmit = async (
+    statusData: Omit<Status, "id">,
+    editingStatus: Status | null
+  ) => {
     try {
       if (editingStatus) {
-        await api.updateStatus(editingStatus.id, statusData);
+        await api.updateStatus(editingStatus.id, statusData); // PUT for edit
         toast.success(t("adminPanel.toasts.statusUpdatedSuccess"));
       } else {
-        await api.createStatus(statusData);
+        await api.createStatus(statusData); // POST for new
         toast.success(t("adminPanel.toasts.statusCreatedSuccess"));
       }
+
       setIsStatusDialogOpen(false);
       setEditingStatus(null);
       fetchData();
+      return true;
     } catch (err: any) {
       toast.error(t("adminPanel.toasts.operationFailed"), {
         description: err.message,
       });
+      return false;
     }
   };
 

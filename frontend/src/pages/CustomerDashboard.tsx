@@ -52,7 +52,7 @@ import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { EnhancedMetricCard } from "@/components/EnhancedMetricCard";
-import { NewOrderForm } from "../NewOrderForm";
+import { NewOrderForm } from "../components/NewOrderForm";
 import { api } from "@/services/api";
 import { EmptyState } from "@/components/EmptyState";
 

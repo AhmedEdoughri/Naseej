@@ -155,7 +155,7 @@ export const DashboardHeader = ({
   };
 
   return (
-    <>
+    <div dir="ltr">
       <header className="bg-white/90 dark:bg-gray-900/80 backdrop-blur-lg p-6 sm:p-8 rounded-2xl shadow-2xl border border-amber-200 dark:border-gray-800 mb-8 transform transition-all duration-1000 ease-out hover:shadow-3xl">
         <div className="flex flex-col lg:flex-row items-center w-full gap-4">
           {/* ICON + TITLE */}
@@ -454,6 +454,6 @@ export const DashboardHeader = ({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
