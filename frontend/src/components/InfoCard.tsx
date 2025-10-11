@@ -23,8 +23,8 @@ import { Button } from "@/components/ui/button";
 interface CardProps {
   item: any;
   type: "user" | "customer";
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   onApprove?: () => void;
   onDeny?: () => void;
   delay?: number;
@@ -81,15 +81,16 @@ export const InfoCard = ({
     >
       {/* --- EDIT BUTTON WITH TOOLTIP --- */}
       <div className="absolute top-1 right-4 z-30 flex items-center">
-        <div className="relative">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="
+        {onEdit && (
+          <div className="relative">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="
         h-9 w-9 bg-white/50 dark:bg-gray-800/50 rounded-full 
         opacity-0 group-hover:opacity-100 
         transition-all duration-300 
@@ -98,34 +99,35 @@ export const InfoCard = ({
         focus:scale-110 focus:opacity-100
         peer
       "
-          >
-            <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </Button>
+            >
+              <Pencil className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </Button>
 
-          {/* EDIT TOOLTIP */}
-          <div
-            className="
+            {/* EDIT TOOLTIP */}
+            <div
+              className="
       absolute top-1/2 -translate-y-1/2 right-full mr-2 px-3 py-1 
       bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800/50 dark:to-gray-800/20 dark:border-gray-800 text-xs font-semibold rounded-md
       opacity-0 scale-0 origin-right
       transition-all duration-300
       peer-hover:scale-100 peer-hover:opacity-100
     "
-          >
-            Edit
+            >
+              Edit
+            </div>
           </div>
-        </div>
-
+        )}
         {/* DELETE BUTTON */}
-        <div className="relative">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="
+        {onDelete && (
+          <div className="relative">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="
         h-9 w-9 bg-white/50 dark:bg-gray-800/50 rounded-full 
         opacity-0 group-hover:opacity-100 
         transition-all duration-300 
@@ -133,23 +135,24 @@ export const InfoCard = ({
         focus:scale-110 focus:opacity-100
         peer
       "
-          >
-            <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </Button>
+            >
+              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+            </Button>
 
-          {/* DELETE TOOLTIP */}
-          <div
-            className="
+            {/* DELETE TOOLTIP */}
+            <div
+              className="
       absolute top-1/2 -translate-y-1/2 right-full mr-2 px-3 py-1 
       bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800/50 dark:to-gray-800/20 dark:border-gray-800 text-xs font-semibold rounded-md
       opacity-0 scale-0 origin-right
       transition-all duration-300
       peer-hover:scale-100 peer-hover:opacity-100
     "
-          >
-            Delete
+            >
+              Delete
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="p-5 relative z-10">

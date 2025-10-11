@@ -42,6 +42,17 @@ interface Store {
   user_id: number;
 }
 
+interface CustomerManagementTabProps {
+  stores: Store[];
+  onStoreSubmit: (
+    formData: StoreFormData,
+    editingStore: StoreFormData | null
+  ) => Promise<boolean>;
+  onDeleteStore: (storeId: string) => void;
+  viewMode: "card" | "table";
+  setViewMode: (mode: "card" | "table") => void;
+}
+
 interface StoreFormData {
   id: string;
   name: string;
@@ -112,11 +123,13 @@ export const CustomerManagementTab = ({
   stores,
   onStoreSubmit,
   onDeleteStore,
-}) => {
+  viewMode,
+  setViewMode,
+}: CustomerManagementTabProps) => {
   const { t } = useTranslation();
   const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
-  const [customerView, setCustomerView] = useState<"card" | "table">("card");
+
   const [customerStatusFilter, setCustomerStatusFilter] = useState<
     "all" | "active" | "Deactivated"
   >("all");
@@ -206,12 +219,12 @@ export const CustomerManagementTab = ({
       <div className="flex justify-center w-full my-4">
         <div className="p-1 bg-amber-50 dark:bg-gray-800 rounded-lg flex items-center space-x-1">
           <Button
-            variant={customerView === "card" ? "default" : "ghost"}
+            variant={viewMode === "card" ? "default" : "ghost"}
             size="icon"
-            onClick={() => setCustomerView("card")}
+            onClick={() => setViewMode("card")}
             title="Card View"
             className={
-              customerView === "card"
+              viewMode === "card"
                 ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
                 : "hover:bg-amber-100 dark:hover:bg-gray-700"
             }
@@ -219,12 +232,12 @@ export const CustomerManagementTab = ({
             <LayoutGrid className="h-4 w-4" />
           </Button>
           <Button
-            variant={customerView === "table" ? "default" : "ghost"}
+            variant={viewMode === "table" ? "default" : "ghost"}
             size="icon"
-            onClick={() => setCustomerView("table")}
+            onClick={() => setViewMode("table")}
             title="Table View"
             className={
-              customerView === "table"
+              viewMode === "table"
                 ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
                 : "hover:bg-amber-100 dark:hover:bg-gray-700"
             }
@@ -235,7 +248,7 @@ export const CustomerManagementTab = ({
       </div>
 
       {filteredCustomers.length > 0 ? (
-        customerView === "card" ? (
+        viewMode === "card" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 md:p-6">
             {filteredCustomers.map((customer, index) => (
               <InfoCard

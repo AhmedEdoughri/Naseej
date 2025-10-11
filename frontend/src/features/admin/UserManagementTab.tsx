@@ -46,6 +46,22 @@ interface User {
   status: string;
   user_id: number;
 }
+interface Role {
+  id: number;
+  name: string;
+}
+interface UserManagementTabProps {
+  users: User[];
+  roles: Role[];
+  onUserSubmit: (userData: any, editingUser: User | null) => Promise<boolean>;
+  onDeleteUser: (userId: string) => void;
+  onApproveUser: (userId: string) => void;
+  onDenyRegistration: (userId: string) => void;
+
+  // ✅ Add these
+  viewMode: "card" | "table";
+  setViewMode: React.Dispatch<React.SetStateAction<"card" | "table">>;
+}
 
 type SortKey = keyof User;
 
@@ -117,12 +133,13 @@ export const UserManagementTab = ({
   onDeleteUser,
   onApproveUser,
   onDenyRegistration,
-}) => {
+  viewMode,
+  setViewMode,
+}: UserManagementTabProps) => {
   const { t, i18n } = useTranslation();
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [userTab, setUserTab] = useState("all");
-  const [userView, setUserView] = useState<"card" | "table">("card");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: SortKey;
@@ -416,12 +433,12 @@ export const UserManagementTab = ({
       <div className="flex justify-center w-full">
         <div className="p-1 bg-amber-50 dark:bg-gray-800 rounded-lg flex items-center space-x-1">
           <Button
-            variant={userView === "card" ? "default" : "ghost"}
+            variant={viewMode === "card" ? "default" : "ghost"}
             size="icon"
-            onClick={() => setUserView("card")}
+            onClick={() => setViewMode("card")}
             title="Card View"
             className={
-              userView === "card"
+              viewMode === "card"
                 ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
                 : "hover:bg-amber-100 dark:hover:bg-gray-700"
             }
@@ -429,12 +446,12 @@ export const UserManagementTab = ({
             <LayoutGrid className="h-4 w-4" />
           </Button>
           <Button
-            variant={userView === "table" ? "default" : "ghost"}
+            variant={viewMode === "table" ? "default" : "ghost"}
             size="icon"
-            onClick={() => setUserView("table")}
+            onClick={() => setViewMode("table")}
             title="Table View"
             className={
-              userView === "table"
+              viewMode === "table"
                 ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow"
                 : "hover:bg-amber-100 dark:hover:bg-gray-700"
             }
@@ -488,7 +505,7 @@ export const UserManagementTab = ({
         </TabsList>
         <TabsContent value="all" className="p-4 md:p-6">
           {sortedAndFilteredUsers.length > 0 ? (
-            userView === "card" ? (
+            viewMode === "card" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {sortedAndFilteredUsers.map((user, index) => (
                   <InfoCard
@@ -513,7 +530,7 @@ export const UserManagementTab = ({
         </TabsContent>
         <TabsContent value="pending" className="p-4 md:p-6">
           {pendingUsers.length > 0 ? (
-            userView === "card" ? (
+            viewMode === "card" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {pendingUsers.map((user, index) => (
                   <InfoCard

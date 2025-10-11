@@ -15,7 +15,7 @@ import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminDashboard";
 import Contact from "./pages/Contact";
 // --- NEW: Import the OrderHistory page ---
-import OrderHistoryPage from "./pages/OrderHistory";
+import OrderHistoryPage from "./features/customer/OrderHistory";
 
 // Components & Providers
 import { ThemeProvider } from "@/components/theme-provider";
